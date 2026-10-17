@@ -1,0 +1,77 @@
+{
+  "default_model": "qwen:1.8b",
+  "default_model_desc": "Qwen1.5-1.8B，约 1.1GB，本项目默认基础模型",
+  "agent_model": "workbench-agent",
+  "models": [
+    {
+      "name": "qwen:1.8b",
+      "family": "Qwen1.5",
+      "size": "1.1GB",
+      "min_ram_gb": 4,
+      "desc": "默认基础模型。轻量快速，中英文能力均衡，适合平板日常对话和学习",
+      "pull": "ollama pull qwen:1.8b"
+    },
+    {
+      "name": "qwen:0.5b",
+      "family": "Qwen1.5",
+      "size": "395MB",
+      "min_ram_gb": 3,
+      "desc": "超轻量模型，2GB 内存老平板也能跑，适合先体验",
+      "pull": "ollama pull qwen:0.5b"
+    },
+    {
+      "name": "qwen2.5:3b",
+      "family": "Qwen2.5",
+      "size": "1.9GB",
+      "min_ram_gb": 6,
+      "desc": "强烈推荐升级：工具调用能力明显强于 1.8B，Agent 体验更稳定",
+      "pull": "ollama pull qwen2.5:3b"
+    },
+    {
+      "name": "qwen2.5-coder:3b",
+      "family": "Qwen2.5-Coder",
+      "size": "1.9GB",
+      "min_ram_gb": 6,
+      "desc": "代码专用模型，写代码和调试错误更拿手，配合代码编辑器使用",
+      "pull": "ollama pull qwen2.5-coder:3b"
+    },
+    {
+      "name": "qwen3:4b",
+      "family": "Qwen3",
+      "size": "2.5GB",
+      "min_ram_gb": 8,
+      "desc": "新一代模型，推理与对话能力更强，支持混合思考模式",
+      "pull": "ollama pull qwen3:4b"
+    },
+    {
+      "name": "gemma3:4b",
+      "family": "Gemma3",
+      "size": "3.3GB",
+      "min_ram_gb": 8,
+      "desc": "谷歌 Gemma3，多语言能力强，视觉能力可扩展",
+      "pull": "ollama pull gemma3:4b"
+    },
+    {
+      "name": "qwen2.5:7b",
+      "family": "Qwen2.5",
+      "size": "4.7GB",
+      "min_ram_gb": 12,
+      "desc": "大内存平板首选，Agent 工具调用最稳，回答质量高",
+      "pull": "ollama pull qwen2.5:7b"
+    },
+    {
+      "name": "deepseek-r1:1.5b",
+      "family": "DeepSeek-R1",
+      "size": "1.1GB",
+      "min_ram_gb": 4,
+      "desc": "推理模型，数学和逻辑题会展示思考过程，适合学习解题思路",
+      "pull": "ollama pull deepseek-r1:1.5b"
+    }
+  ],
+  "notes": [
+    "模型下载后会自动出现在 Open WebUI 的模型列表中，无需额外配置",
+    "内存有限的平板建议同时只保留 1-2 个模型（已默认限制 OLLAMA_MAX_LOADED_MODELS=1）",
+    "删除模型：ollama rm <模型名>",
+    "创建 LoRA 自定义模型见 ollama/Modelfile.lora-template 与 import-lora.sh"
+  ]
+}
