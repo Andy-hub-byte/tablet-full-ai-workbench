@@ -1,0 +1,35 @@
+# ============================================================
+# 运行时数据与本地私有文件，不进入 Git 版本库
+# ============================================================
+
+# 环境配置（含密码等本地信息）
+.env
+webui/.env
+
+# 日志 / PID / 运行时目录
+*.log
+*.pid
+run/
+logs/
+.runtime/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 虚拟环境与 node 模块
+.venv/
+node_modules/
+
+# 用户私有大文件：LoRA 适配器、模型权重、备份包
+ollama/adapters/*.gguf
+ollama/adapters/*.bin
+ollama/adapters/*.safetensors
+backups/
+
+# 操作系统杂项
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
