@@ -1,0 +1,78 @@
+{
+  "agent": {
+    "name": "平板AI工作台智能体",
+    "default_model": "workbench-agent",
+    "fallback_model": "qwen:1.8b",
+    "language": "zh-CN",
+    "description": "运行在安卓平板上的本地智能体：默认使用 Qwen1.5-1.8B 定制的 Agent 人格模型，支持工具调用、任务规划与长期记忆"
+  },
+  "capabilities": {
+    "tool_calling": true,
+    "task_planning": true,
+    "long_term_memory": true,
+    "code_runner": true,
+    "web_search": true,
+    "device_status": true
+  },
+  "tools": [
+    {
+      "name": "代码运行工具",
+      "file": "webui/tools/run_code.py",
+      "enabled": true,
+      "desc": "本地编译运行 C++/Python/JS/Shell 代码，返回输出与报错"
+    },
+    {
+      "name": "任务规划工具",
+      "file": "webui/tools/task_planner.py",
+      "enabled": true,
+      "desc": "把复杂任务拆解成步骤清单，跟踪执行进度"
+    },
+    {
+      "name": "长期记忆工具",
+      "file": "webui/tools/memory.py",
+      "enabled": true,
+      "desc": "保存/回忆用户偏好与背景信息，跨对话记忆"
+    },
+    {
+      "name": "联网搜索工具",
+      "file": "webui/tools/web_search.py",
+      "enabled": true,
+      "desc": "DuckDuckGo 联网搜索，无需 API Key"
+    },
+    {
+      "name": "设备状态工具",
+      "file": "webui/tools/device_status.py",
+      "enabled": true,
+      "desc": "查看平板内存/存储/CPU/已安装模型"
+    }
+  ],
+  "ai_actions": {
+    "generate": {
+      "name": "AI 生成代码",
+      "system": "你是一名经验丰富的程序员，擅长编写规范、易读、带详细中文注释的教学级代码。",
+      "user_template": "请根据下面的需求，编写一段完整的{language}代码。要求：\n1. 代码必须附带详细的中文注释，适合零基础读者学习；\n2. 命名规范、结构清晰；\n3. 只输出代码本身，不要在代码前后添加解释文字。\n\n需求：{prompt}"
+    },
+    "explain": {
+      "name": "AI 解释代码",
+      "system": "你是一名耐心的编程老师，擅长用通俗易懂的中文向零基础初学者讲解代码。",
+      "user_template": "请用中文详细讲解下面这段{language}代码，要求：\n1. 先说这段代码整体做什么；\n2. 再逐行/逐段解释关键语法和逻辑；\n3. 指出初学者容易出错的地方。\n\n```\n{code}\n```"
+    },
+    "fix": {
+      "name": "AI 修复代码",
+      "system": "你是一名严谨的代码审查专家，擅长定位 bug 并给出最小改动的修复方案。",
+      "user_template": "下面这段{language}代码可能有错误或问题，请：\n1. 先指出问题所在（用中文说明原因）；\n2. 然后给出修复后的完整代码（保留详细中文注释）。\n\n```\n{code}\n```"
+    }
+  },
+  "memory": {
+    "data_dir": "/root/.tablet-workbench/data",
+    "max_recall": 5
+  },
+  "recommended_models": [
+    "workbench-agent",
+    "qwen:1.8b",
+    "qwen2.5:3b",
+    "qwen2.5-coder:3b",
+    "qwen3:4b",
+    "gemma3:4b"
+  ]
+}
