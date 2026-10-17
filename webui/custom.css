@@ -1,0 +1,245 @@
+/* ============================================================================
+ * 平板 AI 工作台 · 触屏适配主题
+ * ----------------------------------------------------------------------------
+ * 作用：针对安卓平板触屏操作优化 Open WebUI 界面
+ * 部署：由 scripts/patch-ui.sh 自动注入 Open WebUI 前端
+ * 设计原则：
+ *   1. 触控目标 ≥ 48px（符合移动端触屏规范）
+ *   2. 字号整体放大，平板远距离阅读更轻松
+ *   3. 输入框底部固定，单手可达
+ *   4. 减少依赖悬停（hover）的交互，触屏没有悬停状态
+ *   5. 横屏平板自动启用宽布局
+ * ==========================================================================*/
+
+/* --------------------------------------------------------------------------
+ * 1. 全局变量与基础字号
+ * --------------------------------------------------------------------------*/
+:root {
+  --wb-touch-min: 48px;          /* 最小触控区域 */
+  --wb-font-scale: 1.08;         /* 全局字号放大系数 */
+  --wb-radius: 14px;             /* 圆角，平板视觉更柔和 */
+}
+
+html {
+  font-size: calc(100% * var(--wb-font-scale));
+  -webkit-text-size-adjust: 100%; /* 防止横屏时浏览器自动放大文字 */
+}
+
+/* 禁用双击缩放与点击高闪，让触屏操作更接近原生 App */
+button, a, input, textarea, select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+ * 2. 按钮与可点击元素：保证 48px 触控区域
+ * --------------------------------------------------------------------------*/
+button,
+[role="button"],
+.btn {
+  min-height: var(--wb-touch-min);
+  min-width: var(--wb-touch-min);
+  padding: 10px 18px;
+  border-radius: var(--wb-radius);
+  font-size: 1rem;
+}
+
+/* 图标按钮同样保证触控面积（视觉小、热区大） */
+button svg {
+  width: 1.35em;
+  height: 1.35em;
+}
+
+/* --------------------------------------------------------------------------
+ * 3. 底部输入区：固定 + 加大 + 键盘友好
+ * --------------------------------------------------------------------------*/
+#chat-input,
+#task-input,
+.chat-input,
+[class*="input"] textarea,
+textarea#chat-input {
+  min-height: 56px !important;
+  font-size: 1.05rem !important;
+  line-height: 1.5;
+  border-radius: var(--wb-radius) !important;
+}
+
+/* 发送按钮加大 */
+form button[type="submit"],
+#chat-input + button,
+button[aria-label*="Send"],
+button[aria-label*="发送"] {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+}
+
+/* 适配平板底部手势条，输入框不下沉被遮挡 */
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* --------------------------------------------------------------------------
+ * 4. 聊天消息：更大字号与行距，长文阅读不费力
+ * --------------------------------------------------------------------------*/
+.chat-assistant .prose,
+.chat-user .prose,
+.message .prose,
+.prose {
+  font-size: 1.06rem !important;
+  line-height: 1.75 !important;
+}
+
+.prose p {
+  margin: 0.7em 0;
+}
+
+/* 代码块：更大字号 + 横向滚动 + 不折行 */
+.prose pre,
+pre {
+  font-size: 0.98rem !important;
+  line-height: 1.55;
+  border-radius: var(--wb-radius) !important;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose pre code,
+pre code {
+  font-size: inherit !important;
+  white-space: pre;
+}
+
+/* 行内代码 */
+.prose code:not(pre code) {
+  font-size: 0.95em;
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+}
+
+/* --------------------------------------------------------------------------
+ * 5. 侧边栏：加宽，列表项更高，方便触屏点选
+ * --------------------------------------------------------------------------*/
+nav[aria-label="Sidebar"],
+#sidebar,
+.sidebar {
+  width: 300px !important;
+  min-width: 300px !important;
+}
+
+/* 会话/频道列表项 */
+nav li,
+[class*="chat-item"],
+[class*="conversation"] {
+  min-height: var(--wb-touch-min);
+  border-radius: var(--wb-radius);
+  margin: 4px 8px;
+}
+
+/* 列表文字加大 */
+nav a, nav button {
+  font-size: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+ * 6. 顶部模型选择器：加大触控区域
+ * --------------------------------------------------------------------------*/
+button[class*="model"],
+[class*="model-selector"],
+select {
+  min-height: var(--wb-touch-min) !important;
+  font-size: 1rem !important;
+  border-radius: var(--wb-radius) !important;
+}
+
+/* --------------------------------------------------------------------------
+ * 7. 弹窗与菜单：触屏友好的间距
+ * --------------------------------------------------------------------------*/
+[role="menu"],
+[role="dialog"],
+[role="listbox"] {
+  border-radius: var(--wb-radius);
+}
+
+[role="menuitem"],
+[role="option"] {
+  min-height: var(--wb-touch-min);
+  font-size: 1rem;
+  padding: 10px 16px;
+}
+
+/* --------------------------------------------------------------------------
+ * 8. 去除悬停依赖：触屏无 hover，用常显/按压反馈替代
+ * --------------------------------------------------------------------------*/
+@media (hover: none) {
+  /* 触屏设备：原本 hover 才显示的操作按钮改为半透明常显 */
+  .hover\:opacity-100,
+  [class*="group-hover"] {
+    opacity: 1 !important;
+  }
+}
+
+/* 按压反馈，让触屏点击有"按下"的手感 */
+button:active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 0.05s ease;
+}
+
+/* --------------------------------------------------------------------------
+ * 9. 横屏平板（宽度 ≥ 1024px）：启用宽屏布局
+ * --------------------------------------------------------------------------*/
+@media (min-width: 1024px) and (orientation: landscape) {
+  /* 消息区域最大宽度放宽，利用平板大屏 */
+  .max-w-\[var\(--chat-max-width\)\],
+  [class*="chat-message"] {
+    max-width: 860px;
+  }
+
+  /* 侧边栏更宽 */
+  #sidebar,
+  nav[aria-label="Sidebar"] {
+    width: 320px !important;
+    min-width: 320px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * 10. 滚动条：触屏拖动更粗
+ * --------------------------------------------------------------------------*/
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: rgba(128, 128, 128, 0.45);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------------
+ * 11. 表单元素（登录页等）：大输入框，避免触屏误点
+ * --------------------------------------------------------------------------*/
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  min-height: var(--wb-touch-min) !important;
+  font-size: 1rem !important;
+  border-radius: var(--wb-radius) !important;
+}
+
+/* 复选框/开关触控区域放大 */
+input[type="checkbox"],
+[role="switch"] {
+  min-width: 26px;
+  min-height: 26px;
+}
+
+/* ============================================================================
+ * 主题结束
+ * 如升级 Open WebUI 后失效，重新运行：bash scripts/patch-ui.sh
+ * ==========================================================================*/
