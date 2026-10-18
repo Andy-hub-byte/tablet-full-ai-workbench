@@ -1,35 +1,24 @@
 # ============================================================
-# 运行时数据与本地私有文件，不进入 Git 版本库
+# Full AI Workbench —— 纯前端项目，忽略系统与编辑器杂项
 # ============================================================
-
-# 环境配置（含密码等本地信息）
-.env
-webui/.env
-
-# 日志 / PID / 运行时目录
-*.log
-*.pid
-run/
-logs/
-.runtime/
-
-# Python 缓存
-__pycache__/
-*.pyc
-*.pyo
-
-# 虚拟环境与 node 模块
-.venv/
-node_modules/
-
-# 用户私有大文件：LoRA 适配器、模型权重、备份包
-ollama/adapters/*.gguf
-ollama/adapters/*.bin
-ollama/adapters/*.safetensors
-backups/
 
 # 操作系统杂项
 .DS_Store
 Thumbs.db
-*.tmp
+desktop.ini
+
+# 编辑器
+.idea/
+.vscode/
 *.swp
+*.swo
+*~
+
+# 日志 / 临时文件
+*.log
+*.tmp
+tmp/
+
+# 依赖目录（本项目零依赖，仅为防御性忽略）
+node_modules/
+.venv/

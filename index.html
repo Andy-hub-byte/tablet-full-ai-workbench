@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<!-- 视图设置：禁止双击缩放，适配平板/手机触屏 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>Full AI Workbench · 全功能 AI 网页工具箱</title>
+<meta name="description" content="纯浏览器运行的在线工具箱：音乐播放器、C++ 代码编辑器、AI 聊天助手（带 Agent 能力）、记事本与计时器。无需安装、无需服务器、离线可用，手机 / 平板 / 电脑通用。">
+<!-- 内联 SVG 图标，零外部请求 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   主题变量：深色为默认，浅色通过 html[data-theme="light"] 切换
+   ============================================================ */
+:root{
+  --bg:#0b0e14;            /* 页面背景 */
+  --bg-soft:#10141d;       /* 顶栏背景 */
+  --surface:#151a26;       /* 卡片背景 */
+  --surface-2:#1b2231;     /* 次级背景（输入框、行悬停） */
+  --border:#242c3e;        /* 边框 */
+  --text:#e8ebf2;          /* 主文字 */
+  --text-dim:#8b93a7;      /* 次要文字 */
+  --accent:#5b8cff;        /* 主题色 */
+  --accent-strong:#3d6fe5;
+  --accent-soft:rgba(91,140,255,.14);   /* 主题色浅底 */
+  --success:#3ecf8e;
+  --danger:#ff5b6e;
+  --shadow:0 8px 30px rgba(0,0,0,.35);
+  --radius:14px;
+  --sel-bg:rgba(91,140,255,.35);        /* 代码选区颜色 */
+  /* 代码编辑器语法配色（编辑器两种主题下都保持深色 coding 区风格由 --ed-bg 控制） */
+  --ed-bg:#0f1420;
+  --ed-gutter:#131926;
+  --tk-k:#c792ea;  /* 关键字 */
+  --tk-s:#a5e075;  /* 字符串 */
+  --tk-c:#637777;  /* 注释 */
+  --tk-n:#f78c6c;  /* 数字 */
+  --tk-p:#ffcb6b;  /* 预处理指令 */
+}
+:root[data-theme="light"]{
+  --bg:#f4f5f7;
+  --bg-soft:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#f2f4f8;
+  --border:#dfe3ec;
+  --text:#1c2030;
+  --text-dim:#5d6478;
+  --accent:#3b6dff;
+  --accent-strong:#2f5be0;
+  --accent-soft:rgba(59,109,255,.10);
+  --success:#0e9f6e;
+  --danger:#e5484d;
+  --shadow:0 8px 30px rgba(15,23,42,.08);
+  --sel-bg:rgba(59,109,255,.22);
+  --ed-bg:#fbfcfe;
+  --ed-gutter:#f2f4f8;
+  --tk-k:#8250df;
+  --tk-s:#0a7d5a;
+  --tk-c:#8c959f;
+  --tk-n:#b35300;
+  --tk-p:#9a6700;
+}
+/* ============================================================
+   基础样式
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;
+  transition:background .25s ease,color .25s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+a{color:var(--accent);text-decoration:none}
+ul{list-style:none}
+/* 保证 hidden 属性生效（优先级高于下面各组件的 display 设置） */
+[hidden]{display:none!important}
+/* 统一触屏优化：禁止双击缩放、禁止长按弹出菜单（编辑器区域除外） */
+button,.tab,.chip,.icon-btn,.track{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+
+/* ============================================================
+   顶栏与标签导航
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  background:var(--bg-soft);
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:9px;flex:none}
+.brand .logo{font-size:24px;line-height:1}
+.brand-text b{display:block;font-size:15px;letter-spacing:.2px}
+.brand-text small{display:block;font-size:11px;color:var(--text-dim)}
+.tabs{display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none;justify-content:center}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 14px;min-height:42px;
+  border-radius:999px;border:1px solid transparent;
+  color:var(--text-dim);font-size:14px;white-space:nowrap;
+  transition:all .18s ease;
+}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--surface);color:var(--text);border-color:var(--border);box-shadow:var(--shadow)}
+.top-actions{display:flex;gap:8px;flex:none}
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:42px;height:42px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:17px;color:var(--text);
+  transition:all .15s ease;text-decoration:none;
+}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.icon-btn:active{transform:scale(.94)}
+
+/* ============================================================
+   主区域与卡片
+   ============================================================ */
+.wrap{width:100%;max-width:1100px;margin:0 auto;padding:18px 14px 70px}
+.app{display:none}
+.app.active{display:block;animation:fadeUp .28s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;
+}
+.card-head{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid var(--border);
+}
+.card-head h2{font-size:16px;display:flex;align-items:center;gap:8px}
+.head-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 13px;min-height:40px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;font-size:13.5px;color:var(--text);
+  transition:all .15s ease;white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong);color:#fff}
+.btn-danger:hover{border-color:var(--danger);color:var(--danger)}
+.hint{font-size:12px;color:var(--text-dim);padding:0 16px 12px;line-height:1.6}
+.chip{
+  padding:8px 12px;min-height:36px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:999px;font-size:12.5px;color:var(--text-dim);
+  transition:all .15s ease;white-space:nowrap;
+}
+.chip:hover{color:var(--accent);border-color:var(--accent)}
+.chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+select{
+  padding:9px 10px;min-height:40px;
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:10px;font-size:13.5px;
+}
+
+/* ============================================================
+   音乐播放器
+   ============================================================ */
+.music-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+@media (max-width:880px){.music-grid{grid-template-columns:1fr}}
+.dropzone{padding:10px 12px 14px;min-height:300px}
+.dropzone.dragover{background:var(--accent-soft);outline:2px dashed var(--accent);outline-offset:-8px;border-radius:10px}
+.playlist-empty{padding:44px 16px;text-align:center;color:var(--text-dim);font-size:13.5px;line-height:2}
+.track{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 11px;border-radius:11px;cursor:pointer;
+  transition:background .15s ease;
+}
+.track:hover{background:var(--surface-2)}
+.track.active{background:var(--accent-soft)}
+.track .idx{width:26px;flex:none;text-align:center;font-size:12.5px;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.track.active .idx{color:var(--accent)}
+.track .info{flex:1;min-width:0}
+.track .name{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .meta{font-size:11.5px;color:var(--text-dim);margin-top:2px}
+.track .del{
+  flex:none;width:32px;height:32px;border-radius:8px;
+  color:var(--text-dim);font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.track .del:hover{color:var(--danger);background:var(--surface-2)}
+/* 播放中的跳动音符动画 */
+.eq{display:none;gap:2px;align-items:flex-end;height:14px;width:18px}
+.track.active .eq{display:flex}
+.track.active .idx .num{display:none}
+.eq i{width:3px;background:var(--accent);border-radius:1px;animation:eq .9s ease-in-out infinite}
+.eq i:nth-child(1){height:40%;animation-delay:-.2s}
+.eq i:nth-child(2){height:90%;animation-delay:-.5s}
+.eq i:nth-child(3){height:60%}
+@keyframes eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+.player-card{padding:22px 18px 18px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.cover{
+  width:150px;height:150px;border-radius:20px;flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:56px;
+  background:linear-gradient(135deg,var(--accent) 0%,#9b5bff 100%);
+  box-shadow:var(--shadow);
+  transition:transform .3s ease;
+}
+.cover.playing{animation:coverPulse 2.4s ease-in-out infinite}
+@keyframes coverPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.np-title{font-size:16.5px;font-weight:600;text-align:center;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np-meta{font-size:12px;color:var(--text-dim);text-align:center}
+.seek-row{width:100%;padding:6px 0 0}
+.time-row{width:100%;display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.controls{display:flex;align-items:center;gap:14px;padding:10px 0 4px}
+.play-btn{
+  width:58px;height:58px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:22px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(91,140,255,.4);
+  transition:transform .15s ease;
+}
+.play-btn:hover{background:var(--accent-strong)}
+.play-btn:active{transform:scale(.93)}
+.volume-row{display:flex;align-items:center;gap:10px;width:100%;padding-top:8px}
+.volume-row .range{flex:1}
+/* 滑块统一样式（现代浏览器支持 accent-color） */
+.range{accent-color:var(--accent);width:100%;height:26px;cursor:pointer;touch-action:manipulation}
+.range.seek{height:22px}
+
+/* ============================================================
+   代码编辑器
+   ============================================================ */
+.editor-card{display:flex;flex-direction:column}
+.editor-wrap{
+  --ed-fs:14px;
+  display:flex;height:min(58vh,540px);min-height:380px;
+  background:var(--ed-bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.gutter{
+  width:54px;flex:none;overflow:hidden;position:relative;
+  background:var(--ed-gutter);border-right:1px solid var(--border);
+}
+.gutter-inner{
+  padding:16px 10px 16px 0;text-align:right;
+  color:var(--text-dim);opacity:.75;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  font-size:var(--ed-fs);line-height:1.6;
+  will-change:transform;
+}
+.code-area{flex:1;position:relative;overflow:hidden}
+.code-area pre,.code-area textarea{
+  position:absolute;inset:0;margin:0;border:0;
+  padding:16px 18px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  font-size:var(--ed-fs);line-height:1.6;
+  white-space:pre;word-wrap:normal;overflow-wrap:normal;
+  tab-size:2;-moz-tab-size:2;
+}
+.code-area pre{overflow:hidden;pointer-events:none;color:var(--text)}
+.code-area textarea{
+  background:transparent;color:transparent;
+  -webkit-text-fill-color:transparent;
+  caret-color:var(--accent);
+  resize:none;outline:none;overflow:auto;
+}
+.code-area textarea::selection{background:var(--sel-bg)}
+/* 语法高亮配色 */
+.tk-k{color:var(--tk-k);font-weight:600}
+.tk-s{color:var(--tk-s)}
+.tk-c{color:var(--tk-c);font-style:italic}
+.tk-n{color:var(--tk-n)}
+.tk-p{color:var(--tk-p)}
+.symbol-pad{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));
+  gap:8px;padding:12px 14px;
+}
+.symbol-pad button{
+  min-height:46px;border-radius:10px;
+  background:var(--surface-2);border:1px solid var(--border);
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .12s ease;
+}
+.symbol-pad button:hover{border-color:var(--accent);color:var(--accent)}
+.symbol-pad button:active{transform:scale(.93);background:var(--accent-soft)}
+.editor-status{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;
+  padding:9px 16px;font-size:12px;color:var(--text-dim);
+}
+
+/* ============================================================
+   AI 聊天
+   ============================================================ */
+.chat-card{display:flex;flex-direction:column;height:min(76vh,760px);min-height:520px}
+.chat-settings{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px;background:var(--surface-2)}
+.chat-settings label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--text-dim)}
+.chat-settings input,.chat-settings textarea{
+  padding:9px 11px;background:var(--surface);
+  border:1px solid var(--border);border-radius:9px;
+  font-size:13.5px;color:var(--text);outline:none;width:100%;
+}
+.chat-settings input:focus,.chat-settings textarea:focus{border-color:var(--accent)}
+.chat-settings textarea{resize:vertical;min-height:60px;line-height:1.6}
+.settings-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.settings-actions #cfgStatus{font-size:12px;color:var(--text-dim)}
+.preset-row{display:flex;flex-wrap:wrap;gap:8px}
+.chat-messages{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-welcome{margin:auto;max-width:560px;text-align:center;color:var(--text-dim);padding:20px}
+.chat-welcome .big{font-size:44px;margin-bottom:10px}
+.chat-welcome h3{color:var(--text);font-size:17px;margin-bottom:10px}
+.chat-welcome p{font-size:13px;line-height:1.9;margin-bottom:6px}
+.chat-welcome .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.msg{display:flex;gap:10px;max-width:92%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg .avatar{
+  flex:none;width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  background:var(--surface-2);border:1px solid var(--border);
+}
+.msg .bubble{
+  padding:11px 13px;border-radius:14px;
+  background:var(--surface-2);border:1px solid var(--border);
+  font-size:14px;line-height:1.75;word-break:break-word;
+  min-width:0;
+}
+.msg.user .bubble{background:var(--accent);border-color:var(--accent);color:#fff}
+.msg.user .bubble a{color:#fff;text-decoration:underline}
+.msg.error .bubble{border-color:var(--danger);color:var(--danger);background:transparent}
+.bubble pre.codeblock{
+  margin:8px 0 2px;padding:10px 12px;border-radius:9px;
+  background:var(--ed-bg);border:1px solid var(--border);
+  overflow-x:auto;font-size:12.5px;line-height:1.6;
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.bubble code.inline{
+  padding:1.5px 6px;border-radius:6px;font-size:12.5px;
+  background:var(--accent-soft);color:var(--accent);
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+}
+.bubble strong{color:var(--text)}
+.msg.user .bubble strong{color:#fff}
+/* 工具调用气泡 */
+.msg.tool .bubble{border-style:dashed;font-size:12.5px;padding:9px 12px}
+.tool-head{display:flex;align-items:center;gap:7px;color:var(--accent);font-weight:600}
+.tool-args{margin:6px 0 0;padding:7px 9px;border-radius:8px;background:var(--ed-bg);border:1px solid var(--border);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;color:var(--text-dim);max-height:110px;overflow:auto}
+.tool-result{margin-top:6px;color:var(--success);font-size:12px;white-space:pre-wrap;word-break:break-word}
+/* 流式输出光标 */
+.caret{display:inline-block;width:8px;height:15px;margin-left:2px;vertical-align:-2px;background:var(--accent);border-radius:2px;animation:blink .8s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.chat-input{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--border);align-items:flex-end}
+.chat-input textarea{
+  flex:1;padding:11px 13px;min-height:46px;max-height:130px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:12px;
+  font-size:14px;line-height:1.5;color:var(--text);outline:none;resize:none;
+}
+.chat-input textarea:focus{border-color:var(--accent)}
+.chat-input .btn{min-height:46px}
+
+/* ============================================================
+   记事本
+   ============================================================ */
+.notes-card{display:flex;flex-direction:column;height:min(76vh,720px);min-height:480px}
+#notesArea{
+  flex:1;padding:18px;border:0;outline:none;resize:none;
+  background:var(--surface);color:var(--text);
+  font-size:14.5px;line-height:1.9;
+}
+.notes-status{display:flex;justify-content:space-between;padding:9px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim)}
+
+/* ============================================================
+   计时器
+   ============================================================ */
+.timer-card{padding:26px 18px 22px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.ring-wrap{position:relative;width:220px;height:220px}
+.ring{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:9;stroke-linecap:round}
+.ring-bg{stroke:var(--surface-2)}
+.ring-fg{stroke:var(--accent);transition:stroke .3s}
+.ring-wrap.done .ring-fg{stroke:var(--danger)}
+.timer-display{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-weight:700;letter-spacing:1px;
+  font-variant-numeric:tabular-nums;
+}
+.timer-inputs{display:flex;align-items:center;gap:6px;color:var(--text-dim);font-size:13px}
+.timer-inputs input{
+  width:62px;padding:9px 8px;text-align:center;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:9px;
+  font-size:16px;color:var(--text);outline:none;
+}
+.timer-inputs input:focus{border-color:var(--accent)}
+.timer-controls{display:flex;gap:10px}
+.timer-controls .btn{min-height:48px;padding:12px 26px;font-size:15px}
+.ring-wrap.done{animation:shake .5s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ============================================================
+   页脚与提示
+   ============================================================ */
+.footer{
+  padding:22px 16px 30px;text-align:center;
+  color:var(--text-dim);font-size:12.5px;line-height:2;
+  border-top:1px solid var(--border);
+}
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+  padding:11px 18px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--accent);
+  box-shadow:var(--shadow);font-size:13.5px;color:var(--text);
+  opacity:0;pointer-events:none;z-index:100;
+  transition:opacity .25s ease,transform .25s ease;
+  max-width:86vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============================================================
+   小屏适配（手机）
+   ============================================================ */
+@media (max-width:640px){
+  .brand-text{display:none}
+  .tab span{display:none}
+  .tab{padding:10px 13px}
+  .wrap{padding:14px 10px 60px}
+  .cover{width:120px;height:120px;font-size:44px}
+  .chat-card{height:calc(100vh - 190px);min-height:420px}
+  .timer-display{font-size:34px}
+  .ring-wrap{width:180px;height:180px}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= 顶栏 ======================= -->
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🧰</span>
+    <div class="brand-text">
+      <b>Full AI Workbench</b>
+      <small>全功能 AI 网页工具箱</small>
+    </div>
+  </div>
+  <!-- 模块导航：小屏可横向滑动 -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-app="music">🎵<span>音乐</span></button>
+    <button class="tab" data-app="code">💻<span>代码</span></button>
+    <button class="tab" data-app="chat">🤖<span>AI 聊天</span></button>
+    <button class="tab" data-app="notes">📝<span>记事本</span></button>
+    <button class="tab" data-app="timer">⏱️<span>计时器</span></button>
+  </nav>
+  <div class="top-actions">
+    <!-- 方便访客直达仓库点 Star -->
+    <a class="icon-btn" href="https://github.com/Andy-hub-byte/tablet-full-ai-workbench" target="_blank" rel="noopener" title="GitHub 仓库（欢迎 Star）">⭐</a>
+    <button class="icon-btn" id="themeBtn" title="切换深色 / 浅色模式">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ======================= 模块一：在线音乐播放器 ======================= -->
+<section class="app active" id="app-music">
+  <div class="music-grid">
+    <!-- 左：歌单管理 -->
+    <div class="card">
+      <div class="card-head">
+        <h2>🎵 我的歌单</h2>
+        <div class="head-actions">
+          <button class="btn" id="demoAudioBtn" title="没有音频文件？点此生成一段演示音乐">🎶 演示音轨</button>
+          <button class="btn btn-primary" id="uploadBtn">＋ 上传音频</button>
+          <!-- 隐藏的文件选择框，accept 限定音频类型 -->
+          <input type="file" id="fileInput" accept="audio/*" multiple hidden>
+        </div>
+      </div>
+      <!-- 支持把文件拖拽到这里上传 -->
+      <div class="dropzone" id="dropzone">
+        <p class="playlist-empty" id="playlistEmpty">
+          歌单空空如也～<br>
+          点击「上传音频」选择本地音乐，或把音频文件拖到这里<br>
+          <span style="opacity:.75">文件只在你的浏览器里播放，不会上传到任何服务器</span>
+        </p>
+        <ul class="playlist" id="playlist"></ul>
+      </div>
+    </div>
+    <!-- 右：播放控制 -->
+    <div class="card player-card">
+      <div class="cover" id="cover">🎵</div>
+      <div class="np-title" id="npTitle">未在播放</div>
+      <div class="np-meta" id="npMeta">上传音乐，开始播放吧</div>
+      <div class="seek-row">
+        <!-- 进度条：可拖动（input range 触屏友好） -->
+        <input type="range" class="range seek" id="seek" min="0" max="1000" value="0" step="1" aria-label="播放进度">
+        <div class="time-row"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
+      </div>
+      <div class="controls">
+        <button class="icon-btn" id="prevBtn" title="上一首">⏮</button>
+        <button class="play-btn" id="playBtn" title="播放 / 暂停">▶</button>
+        <button class="icon-btn" id="nextBtn" title="下一首">⏭</button>
+        <button class="icon-btn" id="loopBtn" title="播放模式：列表循环">🔁</button>
+      </div>
+      <div class="volume-row">
+        <button class="icon-btn" id="muteBtn" title="静音">🔊</button>
+        <input type="range" class="range" id="volume" min="0" max="100" value="80" aria-label="音量">
+      </div>
+    </div>
+  </div>
+  <p class="hint">支持 MP3 / WAV / OGG / FLAC / M4A / AAC 等浏览器可解码的音频格式；支持锁屏媒体控制（手机）；深浅色模式点右上角 🌙 切换。</p>
+</section>
+
+<!-- ======================= 模块二：网页代码编辑器 ======================= -->
+<section class="app" id="app-code">
+  <div class="card editor-card">
+    <div class="card-head">
+      <h2>💻 C++ 代码编辑器</h2>
+      <div class="head-actions">
+        <select id="langSel" title="语言">
+          <option value="cpp">C++</option>
+          <option value="c">C</option>
+        </select>
+        <button class="btn" id="tplBtn">📄 插入模板</button>
+        <button class="btn" id="copyCodeBtn">📋 复制</button>
+        <button class="btn" id="dlCodeBtn">⬇️ 下载 .cpp</button>
+        <button class="btn btn-danger" id="clearCodeBtn">🗑 清空</button>
+        <button class="btn" id="fontDownBtn" title="缩小字体">A−</button>
+        <button class="btn" id="fontUpBtn" title="放大字体">A＋</button>
+        <button class="btn btn-primary" id="padBtn" title="触屏符号键盘">⌨️ 符号键盘</button>
+      </div>
+    </div>
+    <!-- 编辑区：行号 + 高亮层 + 透明文字输入层 -->
+    <div class="editor-wrap" id="editorWrap">
+      <div class="gutter" id="gutter"><div class="gutter-inner" id="gutterInner"></div></div>
+      <div class="code-area">
+        <pre id="hlPre" aria-hidden="true"><code id="hlCode"></code></pre>
+        <textarea id="codeInput" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" wrap="off"
+          placeholder="在此输入 C++ 代码，支持语法高亮；平板用户可打开「符号键盘」快速输入括号与分号…"></textarea>
+      </div>
+    </div>
+    <!-- 触屏符号键盘（平板 / 手机友好） -->
+    <div class="symbol-pad" id="symbolPad" hidden></div>
+    <div class="editor-status">
+      <span id="codeStat">0 行 · 0 字符</span>
+      <span>Tab 缩进 / Enter 自动对齐 / 语法高亮实时渲染</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 模块三：网页 AI 聊天（Agent） ======================= -->
+<section class="app" id="app-chat">
+  <div class="card chat-card">
+    <div class="card-head">
+      <h2>🤖 AI 助手 · Agent</h2>
+      <div class="head-actions">
+        <button class="btn" id="settingsBtn">⚙️ 模型设置</button>
+        <button class="btn btn-danger" id="clearChatBtn">清空对话</button>
+      </div>
+    </div>
+    <!-- 模型设置面板：所有配置只保存在本浏览器 -->
+    <div class="chat-settings" id="chatSettings" hidden>
+      <div class="preset-row" id="presetRow">
+        <button class="chip" data-preset="ollama">🖥 本地 Ollama（离线）</button>
+        <button class="chip" data-preset="lmstudio">🖥 LM Studio（离线）</button>
+        <button class="chip" data-preset="openai">☁️ OpenAI 兼容接口</button>
+      </div>
+      <label>接口地址 Base URL
+        <input id="cfgBase" placeholder="例如 http://localhost:11434/v1" spellcheck="false">
+      </label>
+      <label>API Key（仅存本浏览器 localStorage）
+        <input id="cfgKey" type="password" placeholder="本地模型可随便填，如 ollama" spellcheck="false">
+      </label>
+      <label>模型名称
+        <input id="cfgModel" list="modelList" placeholder="例如 qwen2.5:3b / gpt-4o-mini" spellcheck="false">
+        <datalist id="modelList"></datalist>
+      </label>
+      <label>系统提示词（定义助手人格与工具使用规则）
+        <textarea id="cfgPrompt" rows="3" spellcheck="false"></textarea>
+      </label>
+      <div class="settings-actions">
+        <button class="btn" id="fetchModelsBtn">🔍 获取模型列表</button>
+        <button class="btn btn-primary" id="saveCfgBtn">💾 保存设置</button>
+        <span id="cfgStatus"></span>
+      </div>
+    </div>
+    <!-- 消息列表 -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome" id="chatWelcome">
+        <div class="big">🤖</div>
+        <h3>你好，我是这个工具箱的 AI 助手</h3>
+        <p>我可以直接用工具帮你操作本工具箱：<b>写记事本、设计时器、播放音乐、切换界面、报时</b>。</p>
+        <p>点击右上角「⚙️ 模型设置」，接入任意 <b>OpenAI 兼容接口</b>——<br>
+           本机 Ollama / LM Studio（离线可用）或你自己的云 API。</p>
+        <div class="chips">
+          <button class="chip" data-ask="帮我在记事本里列一份周末采购清单">🛒 写一份采购清单</button>
+          <button class="chip" data-ask="5 分钟后提醒我起来喝水">⏰ 5 分钟后提醒我</button>
+          <button class="chip" data-ask="现在几点了？">🕐 现在几点了</button>
+          <button class="chip" data-ask="播放歌单里第一首歌">🎵 放首歌听听</button>
+        </div>
+      </div>
+    </div>
+    <!-- 输入区：Enter 发送，Shift+Enter 换行 -->
+    <form class="chat-input" id="chatForm">
+      <textarea id="chatText" rows="1" placeholder="输入消息，Enter 发送，Shift+Enter 换行…"></textarea>
+      <button class="btn btn-primary" id="sendBtn" type="submit">发送</button>
+      <button class="btn btn-danger" id="stopBtn" type="button" hidden>⏹ 停止</button>
+    </form>
+  </div>
+</section>
+
+<!-- ======================= 模块四：记事本 ======================= -->
+<section class="app" id="app-notes">
+  <div class="card notes-card">
+    <div class="card-head">
+      <h2>📝 记事本</h2>
+      <div class="head-actions">
+        <button class="btn" id="exportNotesBtn">⬇️ 导出 .txt</button>
+        <button class="btn btn-danger" id="clearNotesBtn">🗑 清空</button>
+      </div>
+    </div>
+    <textarea id="notesArea" placeholder="随手记点什么吧～内容会自动保存在本机浏览器里，刷新不丢失。"></textarea>
+    <div class="notes-status">
+      <span id="notesStat">0 字</span>
+      <span id="notesSaved">尚未保存</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 模块五：计时器 ======================= -->
+<section class="app" id="app-timer">
+  <div class="card timer-card">
+    <div class="preset-row">
+      <button class="chip active" id="modeCountdown">⏳ 倒计时</button>
+      <button class="chip" id="modeStopwatch">⏱ 正计时</button>
+    </div>
+    <div class="ring-wrap" id="ringWrap">
+      <svg class="ring" viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="60"></circle>
+        <circle class="ring-fg" id="ringFg" cx="70" cy="70" r="60"></circle>
+      </svg>
+      <div class="timer-display" id="timerDisplay">25:00</div>
+    </div>
+    <!-- 倒计时参数输入（正计时模式下隐藏） -->
+    <div class="timer-inputs" id="timerInputs">
+      <input id="tH" type="number" min="0" max="99" value="0" aria-label="时"><b>时</b>
+      <input id="tM" type="number" min="0" max="59" value="25" aria-label="分"><b>分</b>
+      <input id="tS" type="number" min="0" max="59" value="0" aria-label="秒"><b>秒</b>
+    </div>
+    <div class="preset-row" id="timerPresets">
+      <button class="chip" data-sec="60">1 分钟</button>
+      <button class="chip" data-sec="180">3 分钟</button>
+      <button class="chip" data-sec="300">5 分钟</button>
+      <button class="chip" data-sec="600">10 分钟</button>
+      <button class="chip" data-sec="1500">25 分钟 🍅</button>
+    </div>
+    <div class="timer-controls">
+      <button class="btn btn-primary" id="timerStartBtn">▶ 开始</button>
+      <button class="btn" id="timerResetBtn">↺ 重置</button>
+    </div>
+    <p class="hint" style="padding:0">计时结束会有「嘟」提示音（合成音，无需音频文件）；运行中浏览器标签标题会同步显示剩余时间。</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div>🧰 <b>Full AI Workbench</b> · 纯前端单文件 · 零依赖 · 数据不出浏览器 · 离线可用</div>
+  <div>MIT License · <a href="https://github.com/Andy-hub-byte/tablet-full-ai-workbench" target="_blank" rel="noopener">GitHub 仓库</a> · 欢迎 ⭐ Star 与贡献</div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+/* ============================================================
+ * Full AI Workbench —— 纯前端工具箱
+ * 全部逻辑内联于本文件，无任何外部依赖，可离线运行
+ * ============================================================
+
+/* ---------- 0. 通用工具函数 ---------- */
+// $ / $$：查询选择器简写
+const $  = (sel, el = document) => el.querySelector(sel);
+const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+// HTML 转义，防止 XSS 与语法高亮错乱
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// 秒 -> m:ss / h:mm:ss
+function fmtTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const s = Math.floor(sec % 60), m = Math.floor(sec / 60) % 60, h = Math.floor(sec / 3600);
+  const pad = (n) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+// 轻提示 toast
+let toastTimer = null;
+function toast(msg, ms = 1800) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+// 触发浏览器下载（本地文件，不经过任何服务器）
+function downloadFile(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+// 当前时间文本
+const nowText = () => new Date().toLocaleString('zh-CN', { hour12: false });
+
+/* ---------- 1. 主题切换（深色 / 浅色） ---------- */
+const themeBtn = $('#themeBtn');
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('tfaw-theme', t);
+  themeBtn.textContent = t === 'dark' ? '🌙' : '☀️';
+  themeBtn.title = t === 'dark' ? '切换为浅色模式' : '切换为深色模式';
+}
+applyTheme(localStorage.getItem('tfaw-theme') || 'dark'); // 默认深色
+themeBtn.addEventListener('click', () => {
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+});
+
+/* ---------- 2. 模块切换 ---------- */
+function switchApp(name) {
+  $$('.tab').forEach((b) => b.classList.toggle('active', b.dataset.app === name));
+  $$('.app').forEach((s) => s.classList.toggle('active', s.id === 'app-' + name));
+  if (name === 'code') requestAnimationFrame(updateEditor); // 切换回来时重算行号
+}
+$$('.tab').forEach((b) => b.addEventListener('click', () => switchApp(b.dataset.app)));
+
+/* ============================================================
+ * 3. 在线音乐播放器
+ * ============================================================ */
+const audio = new Audio();          // 唯一播放器实例
+audio.preload = 'metadata';
+const music = {
+  list: [],        // 歌单：[{id,name,size,url,duration,file}]
+  current: -1,     // 当前播放下标
+  loop: 'list',    // 播放模式：list 列表循环 / one 单曲循环 / shuffle 随机
+};
+let seeking = false; // 是否正在拖动进度条
+
+// 添加本地文件到歌单
+function addFiles(fileList) {
+  const files = Array.from(fileList).filter(
+    (f) => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|weba|webm)$/i.test(f.name)
+  );
+  if (!files.length) { toast('未识别到音频文件'); return; }
+  files.forEach((f) => {
+    const item = {
+      id: Date.now() + Math.random().toString(36).slice(2),
+      name: f.name.replace(/\.[^.]+$/, ''),
+      size: f.size,
+      url: URL.createObjectURL(f),   // 本地对象 URL，不走网络
+      duration: 0,
+    };
+    music.list.push(item);
+    // 懒加载时长元数据
+    const probe = new Audio();
+    probe.preload = 'metadata';
+    probe.src = item.url;
+    probe.onloadedmetadata = () => { item.duration = probe.duration; renderPlaylist(); };
+  });
+  renderPlaylist();
+  toast(`已添加 ${files.length} 首歌曲`);
+}
+
+// 渲染歌单列表
+function renderPlaylist() {
+  const ul = $('#playlist');
+  $('#playlistEmpty').style.display = music.list.length ? 'none' : 'block';
+  ul.innerHTML = '';
+  music.list.forEach((item, i) => {
+    const li = document.createElement('li');
+    li.className = 'track' + (i === music.current ? ' active' : '');
+    li.dataset.id = item.id;
+    li.innerHTML =
+      `<span class="idx"><span class="num">${i + 1}</span><span class="eq"><i></i><i></i><i></i></span></span>` +
+      `<span class="info"><span class="name">${esc(item.name)}</span>` +
+      `<span class="meta">${(item.size / 1048576).toFixed(2)} MB` +
+      (item.duration ? ` · ${fmtTime(item.duration)}` : '') + `</span></span>` +
+      `<button class="del" title="从歌单移除">✕</button>`;
+    // 点击行：播放；点击 ✕：移除
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('.del')) {
+        e.stopPropagation();
+        removeTrack(item.id);
+        return;
+      }
+      if (i === music.current) { togglePlay(); return; }
+      playIndex(i);
+    });
+    ul.appendChild(li);
+  });
+}
+// 移除歌曲（同时释放对象 URL）
+function removeTrack(id) {
+  const i = music.list.findIndex((t) => t.id === id);
+  if (i < 0) return;
+  const [item] = music.list.splice(i, 1);
+  URL.revokeObjectURL(item.url);
+  if (i === music.current) {
+    audio.pause();
+    audio.removeAttribute('src');
+    music.current = -1;
+    updateNowPlaying(null);
+  } else if (i < music.current) {
+    music.current -= 1;
+  }
+  renderPlaylist();
+  toast('已移除');
+}
+
+// 播放指定下标
+function playIndex(i) {
+  if (!music.list.length) { toast('歌单是空的，先上传音频吧'); return; }
+  if (i < 0) i = music.list.length - 1;
+  if (i >= music.list.length) i = 0;
+  music.current = i;
+  const item = music.list[i];
+  audio.src = item.url;
+  audio.play().then(() => {
+    updatePlayBtn();
+    setMediaSession(item);
+  }).catch((err) => toast('播放失败：' + (err.message || err)));
+  updateNowPlaying(item);
+  renderPlaylist();
+}
+// 播放 / 暂停切换
+function togglePlay() {
+  if (music.current < 0) { playIndex(0); return; }
+  if (audio.paused) audio.play().then(updatePlayBtn, (e) => toast('播放失败：' + e.message));
+  else audio.pause();
+  updatePlayBtn();
+}
+const nextTrack = () => playIndex(music.current + 1);
+const prevTrack = () => playIndex(music.current - 1);
+// 播放结束：按模式决定下一首
+audio.addEventListener('ended', () => {
+  if (music.loop === 'one') { audio.currentTime = 0; audio.play(); return; }
+  if (music.loop === 'shuffle') {
+    if (music.list.length > 1) {
+      let r;
+      do { r = Math.floor(Math.random() * music.list.length); } while (r === music.current);
+      playIndex(r);
+    }
+    return;
+  }
+  nextTrack(); // 列表循环
+});
+// 进度与时间更新
+audio.addEventListener('timeupdate', () => {
+  if (seeking || !isFinite(audio.duration)) return;
+  $('#seek').value = Math.round((audio.currentTime / audio.duration) * 1000);
+  $('#curTime').textContent = fmtTime(audio.currentTime);
+});
+audio.addEventListener('loadedmetadata', () => {
+  $('#durTime').textContent = fmtTime(audio.duration);
+  // 同步歌单里这首歌的时长
+  const item = music.list[music.current];
+  if (item && item.url === audio.src) { item.duration = audio.duration; renderPlaylist(); }
+});
+audio.addEventListener('play', updatePlayBtn);
+audio.addEventListener('pause', updatePlayBtn);
+// 刷新「正在播放」信息
+function updateNowPlaying(item) {
+  if (!item) {
+    $('#npTitle').textContent = '未在播放';
+    $('#npMeta').textContent = '上传音乐，开始播放吧';
+    $('#cover').classList.remove('playing');
+    $('#cover').textContent = '🎵';
+    return;
+  }
+  $('#npTitle').textContent = item.name;
+  $('#npMeta').textContent = `第 ${music.current + 1} 首 / 共 ${music.list.length} 首 · ${(item.size / 1048576).toFixed(2)} MB`;
+  $('#cover').classList.add('playing');
+  $('#cover').textContent = '🎶';
+}
+// 播放按钮图标随状态变化
+function updatePlayBtn() {
+  $('#playBtn').textContent = audio.paused ? '▶' : '⏸';
+  $('#cover').classList.toggle('playing', !audio.paused && music.current >= 0);
+}
+// 手机锁屏 / 系统媒体控制（Media Session API）
+function setMediaSession(item) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: item.name, artist: '本地音乐', album: 'Full AI Workbench',
+    });
+    navigator.mediaSession.setActionHandler('play', () => audio.play());
+    navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+    navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+    navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+  } catch (e) { /* 部分浏览器不支持，忽略 */ }
+}
+/* --- 音乐模块事件绑定 --- */
+$('#uploadBtn').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+$('#playBtn').addEventListener('click', togglePlay);
+$('#nextBtn').addEventListener('click', nextTrack);
+$('#prevBtn').addEventListener('click', prevTrack);
+// 播放模式循环切换：列表循环 -> 单曲循环 -> 随机
+const LOOP_META = { list: ['🔁', '播放模式：列表循环'], one: ['🔂', '播放模式：单曲循环'], shuffle: ['🔀', '播放模式：随机播放'] };
+$('#loopBtn').addEventListener('click', () => {
+  music.loop = music.loop === 'list' ? 'one' : music.loop === 'one' ? 'shuffle' : 'list';
+  const [icon, title] = LOOP_META[music.loop];
+  $('#loopBtn').textContent = icon;
+  $('#loopBtn').title = title;
+  toast(title.replace('播放模式：', ''));
+});
+// 进度拖动
+const seekEl = $('#seek');
+seekEl.addEventListener('pointerdown', () => { seeking = true; });
+seekEl.addEventListener('pointerup', () => { seeking = false; });
+seekEl.addEventListener('input', () => {
+  if (isFinite(audio.duration)) {
+    $('#curTime').textContent = fmtTime((seekEl.value / 1000) * audio.duration);
+  }
+});
+seekEl.addEventListener('change', () => {
+  if (isFinite(audio.duration)) audio.currentTime = (seekEl.value / 1000) * audio.duration;
+  seeking = false;
+});
+// 音量与静音
+const volumeEl = $('#volume');
+volumeEl.addEventListener('input', () => {
+  audio.volume = volumeEl.value / 100;
+  audio.muted = audio.volume === 0;
+  updateMuteBtn();
+});
+function updateMuteBtn() {
+  $('#muteBtn').textContent = audio.muted || audio.volume === 0 ? '🔇' : audio.volume < 0.5 ? '🔉' : '🔊';
+}
+$('#muteBtn').addEventListener('click', () => { audio.muted = !audio.muted; updateMuteBtn(); });
+audio.volume = 0.8;
+// 拖拽上传
+const dz = $('#dropzone');
+['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('dragover'); }));
+['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('dragover'); }));
+dz.addEventListener('drop', (e) => { if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
+
+/* --- 演示音轨：浏览器内合成 WAV，无需任何音频文件 --- */
+let demoToneCount = 0;
+function makeDemoWav(seconds = 8, baseFreq = 220) {
+  const sr = 8000;                       // 低采样率，体积仅百 KB 级
+  const n = sr * seconds;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const v = new DataView(buf);
+  const wr = (off, str) => { for (let i = 0; i < str.length; i++) v.setUint8(off + i, str.charCodeAt(i)); };
+  wr(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); wr(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  wr(36, 'data'); v.setUint32(40, n * 2, true);
+  const seq = [0, 4, 7, 12, 7, 4, 0, 7]; // 简单琶音，听起来像一段小旋律
+  for (let i = 0; i < n; i++) {
+    const t = i / sr;
+    const f = baseFreq * Math.pow(2, seq[Math.floor(t * 2) % seq.length] / 12);
+    const env = Math.min(1, t / 0.04) * Math.min(1, (seconds - t) / 0.4); // 淡入淡出
+    v.setInt16(44 + i * 2, Math.sin(2 * Math.PI * f * t) * 0.55 * Math.max(0, env) * 0x7fff, true);
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+$('#demoAudioBtn').addEventListener('click', () => {
+  demoToneCount += 1;
+  const base = 196 + (demoToneCount % 4) * 55;   // 每首音高略有不同
+  const file = new File([makeDemoWav(8, base)], `演示音轨-${demoToneCount}.wav`, { type: 'audio/wav' });
+  addFiles([file]);
+});
+
+/* ============================================================
+ * 4. 网页代码编辑器（C++ 语法高亮 + 触屏优化）
+ * ============================================================ */
+const codeInput = $('#codeInput');
+const hlCode = $('#hlCode');
+const hlPre = $('#hlPre');
+const gutterInner = $('#gutterInner');
+// 各语言关键字表
+const KEYWORDS = {
+  cpp: new Set(('alignas alignof and and_eq asm auto bitand bitor bool break case catch char char8_t char16_t char32_t ' +
+    'class compl concept const consteval constexpr const_cast continue co_await co_return co_yield decltype default delete do double ' +
+    'dynamic_cast else enum explicit export extern false float for friend goto if inline int long mutable namespace new noexcept not ' +
+    'nullptr operator or or_eq private protected public register reinterpret_cast requires return short signed sizeof static ' +
+    'static_assert static_cast struct switch template this thread_local throw true try typedef typeid typename union unsigned using ' +
+    'virtual void volatile wchar_t while xor').split(' ')),
+  c: new Set(('auto break case char const continue default do double else enum extern float for goto if inline int long register ' +
+    'restrict return short signed sizeof static struct switch typedef union unsigned void volatile while').split(' ')),
+};
+// 高亮正则：注释 / 字符串 / 预处理指令 / 数字 / 标识符（顺序即优先级）
+const HL_RE = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(^[ \t]*#[ \t]*[a-z]+)|\b(0[xX][0-9a-fA-F]+|\d+\.?\d*(?:[eE][+-]?\d+)?[fFlLuU]*)\b|\b([A-Za-z_]\w*)\b/gm;
+// 核心高亮函数：先分词占位，再整体转义，最后还原，避免 HTML 错乱
+function highlightCode(code, lang) {
+  const KW = KEYWORDS[lang] || KEYWORDS.cpp;
+  const store = [];
+  const marked = code.replace(HL_RE, (m, cmt, str, pre, num, id) => {
+    const cls = cmt ? 'tk-c' : str ? 'tk-s' : pre ? 'tk-p' : num ? 'tk-n' : KW.has(id) ? 'tk-k' : null;
+    store.push(cls ? `<span class="${cls}">${esc(m)}</span>` : esc(m));
+    return '\u0001' + (store.length - 1) + '\u0002';
+  });
+  return esc(marked).replace(/\u0001(\d+)\u0002/g, (_, i) => store[+i]);
+}
+// 输入变化 -> 重绘高亮 / 行号 / 状态栏
+function updateEditor() {
+  const code = codeInput.value;
+  hlCode.innerHTML = highlightCode(code, $('#langSel').value) || '';
+  const lines = code.split('\n').length;
+  if (gutterInner.childElementCount !== lines) {
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += `<div>${i}</div>`;
+    gutterInner.innerHTML = html;
+  }
+  $('#codeStat').textContent = `${lines} 行 · ${code.length} 字符`;
+}
+// 滚动同步：高亮层与行号列跟随文本框
+codeInput.addEventListener('scroll', () => {
+  hlPre.scrollTop = codeInput.scrollTop;
+  hlPre.scrollLeft = codeInput.scrollLeft;
+  gutterInner.style.transform = `translateY(${-codeInput.scrollTop}px)`;
+});
+codeInput.addEventListener('input', updateEditor);
+$('#langSel').addEventListener('change', updateEditor);
+// 在光标处插入文本
+function insertAtCursor(text) {
+  const s = codeInput.selectionStart, e = codeInput.selectionEnd;
+  codeInput.setRangeText(text, s, e, 'end');
+  updateEditor();
+  codeInput.focus();
+}
+// 插入成对符号（括号、引号），光标落在中间
+const PAIRS = { '{': '}', '(': ')', '[': ']', '"': '"', "'": "'" };
+function insertPair(ch) {
+  const s = codeInput.selectionStart, e = codeInput.selectionEnd;
+  const sel = codeInput.value.slice(s, e);
+  const close = PAIRS[ch];
+  const ins = sel ? ch + sel + close : ch + close;
+  codeInput.setRangeText(ins, s, e, 'end');
+  if (!sel) { const pos = s + ch.length; codeInput.setSelectionRange(pos, pos); }
+  updateEditor();
+  codeInput.focus();
+}
+// 键盘增强：Tab 缩进、Enter 自动对齐
+codeInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    insertAtCursor('  ');
+  } else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    const s = codeInput.selectionStart, v = codeInput.value;
+    const ls = v.lastIndexOf('\n', s - 1) + 1;
+    const line = v.slice(ls, s);
+    const indent = (/^[ \t]*/.exec(line) || [''])[0];
+    const extra = /[{(:\[]\s*$/.test(line) ? '  ' : '';   // 行尾是 { ( : [ 时多缩进一级
+    codeInput.setRangeText('\n' + indent + extra, s, codeInput.selectionEnd, 'end');
+    updateEditor();
+  }
+});
+/* --- 符号键盘（平板 / 手机触屏友好） --- */
+const SYMBOLS = [
+  { t: '{' }, { t: '}' }, { t: '(' }, { t: ')' }, { t: '[' }, { t: ']' },
+  { t: ';' }, { t: ':' }, { t: ',' }, { t: '.' }, { t: '"' }, { t: "'" },
+  { t: '=' }, { t: '+' }, { t: '-' }, { t: '*' }, { t: '/' }, { t: '%' },
+  { t: '<' }, { t: '>' }, { t: '!' }, { t: '&' }, { t: '|' }, { t: '^' },
+  { t: '~' }, { t: '#' }, { t: '\\' }, { t: '_' }, { t: '@' }, { t: '?' }, { t: '$' },
+  { t: '\t', label: 'Tab ⇥' }, { t: ' ', label: '空格 ␣' },
+];
+const pad = $('#symbolPad');
+SYMBOLS.forEach((s) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = s.label || s.t;
+  b.title = s.label ? s.label : `插入 ${s.t}`;
+  b.addEventListener('click', () => {
+    if (PAIRS[s.t]) insertPair(s.t);
+    else insertAtCursor(s.t);
+  });
+  pad.appendChild(b);
+});
+$('#padBtn').addEventListener('click', () => {
+  pad.hidden = !pad.hidden;
+  $('#padBtn').textContent = pad.hidden ? '⌨️ 符号键盘' : '⌨️ 收起键盘';
+});
+/* --- 编辑器工具按钮 --- */
+const CODE_TEMPLATE =
+`#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    // 欢迎使用 Full AI Workbench 代码编辑器
+    vector<int> nums = {5, 2, 9, 1, 7};
+
+    int sum = 0;
+    for (int n : nums) {
+        sum += n;          // 累加
+    }
+
+    cout << "元素个数: " << nums.size() << endl;
+    cout << "总和: " << sum << endl;
+    return 0;
+}`;
+$('#tplBtn').addEventListener('click', () => {
+  if (codeInput.value.trim() && !confirm('当前内容将被模板替换，确定吗？')) return;
+  codeInput.value = CODE_TEMPLATE;
+  updateEditor();
+  toast('已插入 C++ 模板');
+});
+$('#copyCodeBtn').addEventListener('click', async () => {
+  if (!codeInput.value) { toast('编辑器是空的'); return; }
+  try {
+    await navigator.clipboard.writeText(codeInput.value);
+    toast('已复制到剪贴板');
+  } catch {
+    codeInput.select();                    // 剪贴板 API 失败时的降级方案
+    document.execCommand('copy');
+    toast('已复制到剪贴板');
+  }
+});
+$('#dlCodeBtn').addEventListener('click', () => {
+  if (!codeInput.value.trim()) { toast('编辑器是空的'); return; }
+  downloadFile(`code-${new Date().toISOString().slice(0, 10)}.cpp`, new Blob([codeInput.value], { type: 'text/plain' }));
+  toast('已开始下载');
+});
+$('#clearCodeBtn').addEventListener('click', () => {
+  if (codeInput.value && !confirm('确定清空编辑器？')) return;
+  codeInput.value = '';
+  updateEditor();
+});
+// 字体大小调节（方便不同视力 / 屏幅）
+let edFontSize = 14;
+function setEdFont(size) {
+  edFontSize = Math.min(22, Math.max(11, size));
+  $('#editorWrap').style.setProperty('--ed-fs', edFontSize + 'px');
+}
+$('#fontUpBtn').addEventListener('click', () => setEdFont(edFontSize + 1));
+$('#fontDownBtn').addEventListener('click', () => setEdFont(edFontSize - 1));
+updateEditor(); // 初始化
+
+/* ============================================================
+ * 5. AI 聊天模块（OpenAI 兼容 + Agent 工具调用）
+ * ============================================================ */
+// 默认系统提示词：定义助手人格 + 工具使用规则 + 不支持函数调用时的回退协议
+const DEFAULT_SYSTEM = [
+  '你是「Full AI Workbench」内置的 AI 助手，一个运行在用户浏览器里的工具箱伙伴。',
+  '你可以调用工具直接帮用户操作这个工具箱：写记事本、读记事本、设倒计时、播放/控制音乐、切换界面、报时。',
+  '规则：',
+  '1. 用户的需求能通过工具完成时，优先调用工具，不要只给文字步骤。',
+  '2. 工具执行后，用简洁的中文汇报结果。',
+  '3. 如果当前模型不支持函数调用（function calling），当需要调用工具时，必须且只输出如下代码块，JSON 中不要写注释：',
+  '```tool',
+  '{"name":"工具名","arguments":{"参数名":"参数值"}}',
+  '```',
+  '4. 不调用工具时正常对话，回答简洁友好。',
+].join('\n');
+// 预设配置
+const PRESETS = {
+  ollama:   { base: 'http://localhost:11434/v1', key: 'ollama',   model: 'qwen2.5:3b' },
+  lmstudio: { base: 'http://localhost:1234/v1',  key: 'lm-studio', model: 'local-model' },
+  openai:   { base: 'https://api.openai.com/v1', key: '',          model: 'gpt-4o-mini' },
+};
+// Agent 可用工具定义（JSON Schema，发给模型）
+const AGENT_TOOLS = [
+  { type: 'function', function: {
+    name: 'notepad_write', description: '把指定内容写入记事本（覆盖原有内容）',
+    parameters: { type: 'object', properties: { content: { type: 'string', description: '要写入记事本的完整文本' } }, required: ['content'] } } },
+  { type: 'function', function: {
+    name: 'notepad_read', description: '读取记事本当前内容',
+    parameters: { type: 'object', properties: {} } } },
+  { type: 'function', function: {
+    name: 'timer_start', description: '开始一个倒计时',
+    parameters: { type: 'object', properties: {
+      seconds: { type: 'integer', description: '倒计时秒数，1-86400' },
+      label: { type: 'string', description: '计时标签（可选）' } }, required: ['seconds'] } } },
+  { type: 'function', function: {
+    name: 'music_play', description: '按关键词播放歌单中的歌曲',
+    parameters: { type: 'object', properties: { query: { type: 'string', description: '歌曲名关键词，留空播放第一首' } } } } },
+  { type: 'function', function: {
+    name: 'music_control', description: '控制音乐播放状态',
+    parameters: { type: 'object', properties: { action: { type: 'string', enum: ['pause', 'resume', 'next', 'prev'], description: 'pause 暂停 / resume 继续 / next 下一首 / prev 上一首' } }, required: ['action'] } } },
+  { type: 'function', function: {
+    name: 'switch_app', description: '切换到工具箱指定界面',
+    parameters: { type: 'object', properties: { app: { type: 'string', enum: ['music', 'code', 'chat', 'notes', 'timer'], description: '目标界面' } }, required: ['app'] } } },
+  { type: 'function', function: {
+    name: 'get_current_time', description: '获取当前日期时间',
+    parameters: { type: 'object', properties: {} } } },
+];
+// 配置读写（只存 localStorage）
+const CFG_KEY = 'tfaw-chat-cfg';
+function loadCfg() {
+  try {
+    return Object.assign({ base: '', key: '', model: '', system: DEFAULT_SYSTEM }, JSON.parse(localStorage.getItem(CFG_KEY) || '{}'));
+  } catch { return { base: '', key: '', model: '', system: DEFAULT_SYSTEM }; }
+}
+function saveCfg(cfg) { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+// 填充设置表单
+function fillCfgForm() {
+  const c = loadCfg();
+  $('#cfgBase').value = c.base;
+  $('#cfgKey').value = c.key;
+  $('#cfgModel').value = c.model;
+  $('#cfgPrompt').value = c.system;
+}
+fillCfgForm();
+// 首次访问且未配置 -> 自动展开设置面板
+if (!localStorage.getItem(CFG_KEY)) $('#chatSettings').hidden = false;
+$('#settingsBtn').addEventListener('click', () => { $('#chatSettings').hidden = !$('#chatSettings').hidden; });
+// 预设按钮
+$$('#presetRow .chip').forEach((b) => b.addEventListener('click', () => {
+  const p = PRESETS[b.dataset.preset];
+  $('#cfgBase').value = p.base;
+  $('#cfgKey').value = p.key;
+  $('#cfgModel').value = p.model;
+  $$('#presetRow .chip').forEach((x) => x.classList.toggle('active', x === b));
+  $('#cfgStatus').textContent = '已填入预设，请点击「保存设置」';
+}));
+// 保存设置
+$('#saveCfgBtn').addEventListener('click', () => {
+  saveCfg({
+    base: $('#cfgBase').value.trim().replace(/\/+$/, ''),
+    key: $('#cfgKey').value.trim(),
+    model: $('#cfgModel').value.trim(),
+    system: $('#cfgPrompt').value.trim() || DEFAULT_SYSTEM,
+  });
+  $('#cfgStatus').textContent = '✅ 已保存（仅存于本浏览器）';
+  toast('设置已保存');
+});
+// 获取模型列表（OpenAI 兼容 /models 接口）
+$('#fetchModelsBtn').addEventListener('click', async () => {
+  const c = loadCfg();
+  const base = $('#cfgBase').value.trim().replace(/\/+$/, '') || c.base;
+  if (!base) { $('#cfgStatus').textContent = '请先填写接口地址'; return; }
+  $('#cfgStatus').textContent = '正在获取模型列表…';
+  try {
+    const res = await fetch(base + '/models', {
+      headers: c.key || $('#cfgKey').value.trim() ? { Authorization: 'Bearer ' + (c.key || $('#cfgKey').value.trim()) } : {},
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const ids = (j.data || []).map((m) => m.id).filter(Boolean);
+    if (!ids.length) throw new Error('未返回模型');
+    $('#modelList').innerHTML = ids.map((id) => `<option value="${esc(id)}">`).join('');
+    $('#cfgStatus').textContent = `✅ 获取到 ${ids.length} 个模型`;
+  } catch (e) {
+    $('#cfgStatus').textContent = '⚠️ 获取失败：' + e.message + '（检查地址 / 跨域 CORS）';
+  }
+});
+/* --- 消息渲染 --- */
+const chatMessages = $('#chatMessages');
+const chatWelcome = $('#chatWelcome');   // 提前持有引用，清空对话后需要重新挂载
+const chatHistory = [];   // 上下文历史（user / assistant 纯文本）
+// 极简 Markdown 渲染（代码块 / 行内代码 / 加粗 / 换行），先转义防 XSS
+function renderMd(text) {
+  let h = esc(text);
+  h = h.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre class="codeblock"><code>${code.replace(/\n$/, '')}</code></pre>`);
+  h = h.replace(/`([^`\n]+)`/g, '<code class="inline">$1</code>');
+  h = h.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  return h.replace(/\n/g, '<br>');
+}
+// 添加一条消息气泡，返回气泡元素
+function addMsg(role, text = '') {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const avatar = role === 'user' ? '' : '<div class="avatar">🤖</div>';
+  div.innerHTML = `${avatar}<div class="bubble">${renderMd(text)}</div>`;
+  chatMessages.appendChild(div);
+  scrollChat();
+  return div;
+}
+// 工具调用气泡（展示参数与执行结果）
+function addToolMsg(name, args, result) {
+  const div = document.createElement('div');
+  div.className = 'msg tool';
+  div.innerHTML = `<div class="avatar">🔧</div><div class="bubble">` +
+    `<div class="tool-head">调用工具 ${esc(name)}</div>` +
+    `<pre class="tool-args">${esc(typeof args === 'string' ? args : JSON.stringify(args, null, 2))}</pre>` +
+    `<div class="tool-result">→ ${esc(result)}</div></div>`;
+  chatMessages.appendChild(div);
+  scrollChat();
+  return div;
+}
+// 滚动到底部（用户手动上滚时不打扰）
+function scrollChat(force = false) {
+  const nearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 140;
+  if (force || nearBottom) chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+// 欢迎语芯片 -> 填入输入框
+$$('.chat-welcome .chip').forEach((b) => b.addEventListener('click', () => {
+  $('#chatText').value = b.dataset.ask;
+  autoGrow($('#chatText'));
+  $('#chatText').focus();
+}));
+// 输入框自动增高
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(130, ta.scrollHeight) + 'px';
+}
+$('#chatText').addEventListener('input', () => autoGrow($('#chatText')));
+// Enter 发送 / Shift+Enter 换行（兼容中文输入法）
+$('#chatText').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    e.preventDefault();
+    $('#chatForm').requestSubmit();
+  }
+});
+// 清空对话
+function clearChat() {
+  chatHistory.length = 0;
+  chatMessages.innerHTML = '';
+  chatMessages.appendChild(chatWelcome);   // 重新挂载欢迎语
+  chatWelcome.style.display = '';
+}
+$('#clearChatBtn').addEventListener('click', clearChat);
+/* --- 工具执行核心（同步）：把模型的调用真正作用到工具箱 --- */
+function runTool(name, args) {
+  args = args || {};
+  switch (name) {
+    case 'notepad_write':
+      notesArea.value = String(args.content ?? '');
+      updateNotesStat(); saveNotes(true);
+      return `已写入记事本（共 ${notesArea.value.length} 字）`;
+    case 'notepad_read': {
+      const t = notesArea.value.trim();
+      return t ? '记事本当前内容：\n' + t.slice(0, 2000) : '记事本当前为空';
+    }
+    case 'timer_start': {
+      const sec = Math.min(86400, Math.max(1, parseInt(args.seconds, 10) || 60));
+      startCountdown(sec, String(args.label || 'AI 计时'));
+      return `已开始 ${sec} 秒倒计时${args.label ? '（' + args.label + '）' : ''}`;
+    }
+    case 'music_play': {
+      if (!music.list.length) return '歌单为空，无法播放（可先上传音乐或点击「演示音轨」）';
+      const q = String(args.query || '').trim();
+      let i = q ? music.list.findIndex((t) => t.name.toLowerCase().includes(q.toLowerCase())) : 0;
+      if (i < 0) i = 0;
+      playIndex(i);
+      return `正在播放：${music.list[i].name}`;
+    }
+    case 'music_control': {
+      switch (args.action) {
+        case 'pause': audio.pause(); return '已暂停播放';
+        case 'resume': audio.play().catch(() => {}); return '已继续播放';
+        case 'next': nextTrack(); return '已切换到下一首';
+        case 'prev': prevTrack(); return '已切换到上一首';
+        default: return '未知操作：' + args.action;
+      }
+    }
+    case 'switch_app': {
+      const map = { music: 'music', code: 'code', chat: 'chat', notes: 'notes', timer: 'timer' };
+      const k = map[args.app];
+      if (k) { switchApp(k); return `已切换到「${k}」界面`; }
+      return '未知界面：' + args.app;
+    }
+    case 'get_current_time':
+      return nowText();
+    default:
+      return '未知工具：' + name;
+  }
+}
+// 异步包装（Agent 循环里 await，便于未来接入异步工具）
+async function executeTool(name, args) { return runTool(name, args); }
+/* --- 流式请求（SSE） --- */
+let abortCtrl = null;
+async function streamChat(cfg, messages, onDelta) {
+  const body = { model: cfg.model, messages, stream: true, temperature: 0.6 };
+  if (cfg.useTools !== false) { body.tools = AGENT_TOOLS; body.tool_choice = 'auto'; }
+  const res = await fetch(cfg.base + '/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(cfg.key ? { Authorization: 'Bearer ' + cfg.key } : {}),
+    },
+    body: JSON.stringify(body),
+    signal: abortCtrl?.signal,
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} ${t.slice(0, 180)}`);
+  }
+  const reader = res.body.getReader();
+  const dec = new TextDecoder('utf-8');
+  let buf = '', content = '';
+  const toolMap = new Map();   // index -> {id,name,arguments}
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (data === '[DONE]') { buf = ''; break; }
+      let j = null;
+      try { j = JSON.parse(data); } catch { continue; }
+      if (j.error) throw new Error(j.error.message || '模型返回错误');
+      const d = (j.choices && j.choices[0] && j.choices[0].delta) || {};
+      if (d.content) { content += d.content; onDelta(content); }
+      if (Array.isArray(d.tool_calls)) {
+        for (const tc of d.tool_calls) {
+          const i = tc.index ?? 0;
+          if (!toolMap.has(i)) toolMap.set(i, { id: '', name: '', arguments: '' });
+          const t = toolMap.get(i);
+          if (tc.id) t.id = tc.id;
+          if (tc.function?.name) t.name += tc.function.name;
+          if (tc.function?.arguments) t.arguments += tc.function.arguments;
+        }
+      }
+    }
+  }
+  return { content, toolCalls: Array.from(toolMap.values()).filter((t) => t.name) };
+}
+// 回退协议：模型不支持函数调用时，解析 ```tool 代码块
+function parseFallbackTools(text) {
+  const calls = [];
+  const re = /```tool\s*\n?([\s\S]*?)```/g;
+  let m;
+  while ((m = re.exec(text))) {
+    try {
+      const o = JSON.parse(m[1].trim());
+      if (o && o.name) calls.push({ id: 'fb_' + Date.now() + '_' + calls.length, name: o.name, arguments: JSON.stringify(o.arguments || {}) });
+    } catch { /* 忽略无法解析的块 */ }
+  }
+  return calls;
+}
+/* --- 发送与 Agent 循环 --- */
+async function sendChat(text) {
+  text = text.trim();
+  if (!text) return;
+  const cfg = loadCfg();
+  if (!cfg.base || !cfg.model) {
+    toast('请先在「⚙️ 模型设置」中配置接口与模型');
+    if ($('#chatSettings').hidden) $('#chatSettings').hidden = false;
+    return;
+  }
+  // 收起欢迎语，记录用户消息
+  chatWelcome.style.display = 'none';
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  const ta = $('#chatText');
+  ta.value = '';
+  autoGrow(ta);
+  // 组装上下文：系统提示 + 最近若干条历史
+  const messages = [{ role: 'system', content: cfg.system }].concat(
+    chatHistory.slice(-16).map((m) => ({ role: m.role, content: m.content }))
+  );
+  abortCtrl = new AbortController();
+  $('#sendBtn').hidden = true;
+  $('#stopBtn').hidden = false;
+  try {
+    await runAgentLoop(cfg, messages);
+  } catch (e) {
+    if (e.name === 'AbortError') addMsg('assistant', '⏹ 已停止生成。');
+    else addMsg('error', '⚠️ 请求失败：' + e.message + '\n请检查：接口地址是否正确、API Key 是否有效、服务是否允许跨域（CORS）、https 页面不能访问 http 本地接口。');
+  } finally {
+    abortCtrl = null;
+    $('#sendBtn').hidden = false;
+    $('#stopBtn').hidden = true;
+  }
+}
+// Agent 主循环：模型 -> 工具调用 -> 执行 -> 带结果再问模型（最多 6 轮）
+async function runAgentLoop(cfg, messages) {
+  for (let round = 0; round < 6; round++) {
+    const bubble = addMsg('assistant', '');
+    let last = '';
+    const resp = await streamChat(cfg, messages, (full) => {
+      last = full;
+      bubble.querySelector('.bubble').innerHTML = renderMd(full) + '<span class="caret"></span>';
+      scrollChat();
+    });
+    bubble.querySelector('.bubble').innerHTML = renderMd(resp.content || '（调用工具中…）');
+    messages.push({ role: 'assistant', content: resp.content || null, ...(resp.toolCalls.length ? { tool_calls: resp.toolCalls.map((t) => ({ id: t.id || 'call_' + Date.now(), type: 'function', function: { name: t.name, arguments: t.arguments || '{}' } })) } : {}) });
+    chatHistory.push({ role: 'assistant', content: resp.content || '（调用了工具）' });
+    let calls = resp.toolCalls;
+    if (!calls.length) calls = parseFallbackTools(resp.content || '');   // 本地模型回退协议
+    if (!calls.length) return;                                          // 普通对话，结束
+    for (const call of calls) {
+      let args = {};
+      try { args = JSON.parse(call.arguments || '{}'); } catch { /* 参数错误也继续，交给工具兜底 */ }
+      const result = await executeTool(call.name, args);
+      addToolMsg(call.name, call.arguments, result);
+      messages.push({ role: 'tool', tool_call_id: call.id || 'call_' + Date.now(), content: result });
+    }
+    // 进入下一轮：让模型基于工具结果继续回答
+  }
+  addMsg('assistant', '（已达到最大工具调用轮数，结束）');
+}
+$('#chatForm').addEventListener('submit', (e) => { e.preventDefault(); sendChat($('#chatText').value); });
+$('#stopBtn').addEventListener('click', () => { abortCtrl?.abort(); });
+
+/* ============================================================
+ * 6. 记事本（自动保存到 localStorage）
+ * ============================================================ */
+const notesArea = $('#notesArea');
+notesArea.value = localStorage.getItem('tfaw-notes') || '';
+function updateNotesStat() { $('#notesStat').textContent = notesArea.value.length + ' 字'; }
+let notesTimer = null;
+function saveNotes(now = false) {
+  clearTimeout(notesTimer);
+  const write = () => {
+    localStorage.setItem('tfaw-notes', notesArea.value);
+    $('#notesSaved').textContent = '已自动保存 ' + new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  };
+  if (now) write();
+  else notesTimer = setTimeout(write, 400);
+}
+notesArea.addEventListener('input', () => { updateNotesStat(); saveNotes(); });
+updateNotesStat();
+if (notesArea.value) saveNotes(true);
+$('#exportNotesBtn').addEventListener('click', () => {
+  if (!notesArea.value.trim()) { toast('记事本是空的'); return; }
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+  downloadFile(`notes-${stamp}.txt`, new Blob([notesArea.value], { type: 'text/plain' }));
+  toast('已导出 .txt');
+});
+$('#clearNotesBtn').addEventListener('click', () => {
+  if (notesArea.value && !confirm('确定清空记事本？')) return;
+  notesArea.value = '';
+  updateNotesStat();
+  saveNotes(true);
+  $('#notesSaved').textContent = '已清空';
+});
+
+/* ============================================================
+ * 7. 计时器（倒计时 / 正计时，提示音为 WebAudio 合成）
+ * ============================================================ */
+const RING_C = 2 * Math.PI * 60;   // SVG 圆环周长
+const ringFg = $('#ringFg');
+ringFg.style.strokeDasharray = RING_C;
+const timer = { mode: 'countdown', running: false, remain: 25 * 60, total: 25 * 60, tick: null, sw: 0, swLast: 0 };
+// 更新圆环与显示
+function updateTimerUI() {
+  let progress, text;
+  if (timer.mode === 'countdown') {
+    progress = timer.total ? timer.remain / timer.total : 0;
+    text = fmtTime(timer.remain);
+  } else {
+    progress = 1 - (timer.sw % 60) / 60;   // 正计时：每分钟一圈
+    text = fmtTime(timer.sw);
+  }
+  ringFg.style.strokeDashoffset = RING_C * (1 - progress);
+  $('#timerDisplay').textContent = text;
+  if (timer.running) document.title = '⏳ ' + text + ' · Full AI Workbench';
+  else if (document.title.startsWith('⏳')) document.title = 'Full AI Workbench · 全功能 AI 网页工具箱';
+}
+// 结束提示音：振荡器合成三声「嘟」，无需音频文件
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let t = ctx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.start(t); o.stop(t + 0.38);
+      t += 0.5;
+    }
+  } catch { /* 浏览器不支持时静默 */ }
+}
+// 倒计时主循环
+function startCountdown(seconds, label) {
+  if (timer.mode !== 'countdown') setTimerMode('countdown');
+  timer.total = timer.remain = Math.min(86400, Math.max(1, Math.round(seconds)));
+  if (!timer.running) toggleTimer();
+  updateTimerUI();
+  toast(`⏳ 已开始 ${fmtTime(timer.total)} 倒计时${label ? ' · ' + label : ''}`);
+}
+function toggleTimer() {
+  if (timer.running) {
+    clearInterval(timer.tick);
+    timer.running = false;
+    if (timer.mode === 'stopwatch') timer.sw += (Date.now() - timer.swLast) / 1000;
+    $('#timerStartBtn').textContent = '▶ 开始';
+  } else {
+    timer.running = true;
+    timer.swLast = Date.now();
+    timer.tick = setInterval(() => {
+      if (timer.mode === 'countdown') {
+        timer.remain = Math.max(0, timer.remain - 0.2);
+        if (timer.remain <= 0) { finishTimer(); return; }
+      } else {
+        timer.sw += (Date.now() - timer.swLast) / 1000;
+        timer.swLast = Date.now();
+      }
+      updateTimerUI();
+    }, 200);
+    $('#timerStartBtn').textContent = '⏸ 暂停';
+  }
+  updateTimerUI();
+}
+function finishTimer() {
+  clearInterval(timer.tick);
+  timer.running = false;
+  timer.remain = 0;
+  $('#timerStartBtn').textContent = '▶ 开始';
+  $('#ringWrap').classList.add('done');
+  playBeep();
+  toast('⏰ 时间到！');
+  document.title = '⏰ 时间到！ · Full AI Workbench';
+  setTimeout(() => $('#ringWrap').classList.remove('done'), 1200);
+  updateTimerUI();
+}
+// 模式切换
+function setTimerMode(mode) {
+  timer.mode = mode;
+  $('#modeCountdown').classList.toggle('active', mode === 'countdown');
+  $('#modeStopwatch').classList.toggle('active', mode === 'stopwatch');
+  $('#timerInputs').hidden = mode !== 'countdown';
+  $('#timerPresets').hidden = mode !== 'countdown';
+  if (timer.running) { clearInterval(timer.tick); timer.running = false; $('#timerStartBtn').textContent = '▶ 开始'; }
+  updateTimerUI();
+}
+$('#modeCountdown').addEventListener('click', () => setTimerMode('countdown'));
+$('#modeStopwatch').addEventListener('click', () => setTimerMode('stopwatch'));
+// 手动输入时长（未运行时才生效）
+['tH', 'tM', 'tS'].forEach((id) => $('#' + id).addEventListener('change', () => {
+  if (timer.running) return;
+  const h = Math.min(99, Math.max(0, parseInt($('#tH').value, 10) || 0));
+  const m = Math.min(59, Math.max(0, parseInt($('#tM').value, 10) || 0));
+  const s = Math.min(59, Math.max(0, parseInt($('#tS').value, 10) || 0));
+  $('#tH').value = h; $('#tM').value = m; $('#tS').value = s;
+  timer.total = timer.remain = h * 3600 + m * 60 + s || 60;
+  updateTimerUI();
+}));
+// 快捷预设
+$$('#timerPresets .chip').forEach((b) => b.addEventListener('click', () => {
+  if (timer.running) toggleTimer();
+  const sec = parseInt(b.dataset.sec, 10);
+  $('#tH').value = Math.floor(sec / 3600);
+  $('#tM').value = Math.floor((sec % 3600) / 60);
+  $('#tS').value = sec % 60;
+  timer.total = timer.remain = sec;
+  updateTimerUI();
+}));
+$('#timerStartBtn').addEventListener('click', toggleTimer);
+$('#timerResetBtn').addEventListener('click', () => {
+  if (timer.running) toggleTimer();
+  if (timer.mode === 'countdown') {
+    const h = parseInt($('#tH').value, 10) || 0, m = parseInt($('#tM').value, 10) || 0, s = parseInt($('#tS').value, 10) || 0;
+    timer.total = timer.remain = h * 3600 + m * 60 + s || 60;
+  } else {
+    timer.sw = 0;
+  }
+  updateTimerUI();
+});
+updateTimerUI();
+
+/* ============================================================
+ * 8. 对外暴露的小接口（方便二次开发 / 演示调试）
+ *    在浏览器控制台可调用，例如：
+ *    TFAW.addDemoTrack()            生成一首演示音轨
+ *    TFAW.seedChatDemo()            无需 API Key 预览 Agent 对话效果
+ *    TFAW.setCodeSample()           填入示例 C++ 代码
+ * ============================================================ */
+function setCodeSample() {
+  codeInput.value = CODE_TEMPLATE;
+  updateEditor();
+}
+function seedChatDemo() {
+  switchApp('chat');
+  clearChat();
+  chatWelcome.style.display = 'none';   // 隐藏欢迎语，只展示对话
+  addMsg('user', '帮我在记事本里写一份周末采购清单，再设一个 5 分钟的闹钟提醒我休息，最后放首歌。');
+  chatHistory.push({ role: 'user', content: '帮我在记事本里写一份周末采购清单，再设一个 5 分钟的闹钟提醒我休息，最后放首歌。' });
+  let r = runTool('notepad_write', { content: '周末采购清单\n\n- 牛奶 1 盒\n- 鸡蛋 1 打\n- 吐司面包 1 袋\n- 苹果 6 个\n- 咖啡豆 1 袋\n- 洗衣液 1 瓶' });
+  addToolMsg('notepad_write', { content: '周末采购清单…（完整内容）' }, r);
+  chatHistory.push({ role: 'assistant', content: '（调用工具：notepad_write）' });
+  r = runTool('timer_start', { seconds: 300, label: '喝水休息' });
+  addToolMsg('timer_start', { seconds: 300, label: '喝水休息' }, r);
+  chatHistory.push({ role: 'assistant', content: '（调用工具：timer_start）' });
+  r = music.list.length ? runTool('music_play', { query: '' }) : '歌单为空，已跳过播放（可点击「演示音轨」生成一首）';
+  addToolMsg('music_play', { query: '第一首' }, r);
+  chatHistory.push({ role: 'assistant', content: '（调用工具：music_play）' });
+  addMsg('assistant', '都办好啦 ✅\n1. 采购清单已写入记事本；\n2. 5 分钟倒计时已开始；\n3. ' +
+    (music.list.length ? '歌单音乐已经开始播放，享受一下吧～' : '歌单还是空的，上传几首本地音乐或点「🎶 演示音轨」就能播放。'));
+  chatHistory.push({ role: 'assistant', content: '都办好啦 ✅（记事本已更新，倒计时已开始）' });
+}
+window.TFAW = {
+  version: '1.0.0',
+  switchApp, addFiles, addDemoTrack: () => $('#demoAudioBtn').click(),
+  setCodeSample, seedChatDemo,
+  music, audio,
+  notes: {
+    get: () => notesArea.value,
+    set: (v) => { notesArea.value = v; updateNotesStat(); saveNotes(true); },
+  },
+};
+</script>
+</body>
+</html>

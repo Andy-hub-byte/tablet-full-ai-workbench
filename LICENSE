@@ -1,23 +1,6 @@
 MIT License
 
-Copyright (c) 2026 Andy-hub-byte and tablet-full-ai-workbench contributors
-
-===============================================================================
-本衍生项目包含以下上游开源项目的代码与组件，特此保留其版权声明：
-===============================================================================
-
-1) Ollama
-   原仓库地址：https://github.com/ollama/ollama
-   版权所有 (c) Ollama team
-   许可证：MIT License
-
-2) Open WebUI
-   原仓库地址：https://github.com/open-webui/open-webui
-   版权所有 (c) Open WebUI team
-   许可证：MIT License
-
-本项目仅以上游项目为基础进行部署配置、界面定制与工具扩展，
-未修改上游项目源码本身；如对上游项目有定制需求，请遵循其各自的开源协议。
+Copyright (c) 2026 Andy-hub-byte
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

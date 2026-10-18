@@ -1,224 +1,345 @@
-# 版权声明
-本项目基于 Open WebUI（原作者Open WebUI团队）和 Ollama（原作者Ollama团队）二次开发。
-两个原项目都使用 MIT License。衍生项目同样遵循 MIT License，保留原作者版权。
-Ollama原仓库地址：https://github.com/ollama/ollama
-Open WebUI原仓库地址：https://github.com/open-webui/open-webui
+<div align="center">
 
-> ⭐ 如果本项目对你有帮助，欢迎点 Star 支持本项目！
+# 🧰 tablet-full-ai-workbench
+
+# Full AI Workbench · 全功能 AI 网页工具箱
+
+**一个网页，装下整个工具箱** —— 音乐播放器、C++ 代码编辑器、AI 智能助手（Agent）、记事本、计时器。
+纯浏览器本地运行：**无需安装、无需服务器、离线可用**；手机 / 安卓平板 / 电脑，打开即用。
+
+*One web page, a full toolbox inside — music player, C++ code editor, AI chat agent, notepad and timer.
+Everything runs locally in your browser: no install, no server, no account, and it works offline.
+Use it on your phone, Android tablet, or desktop.*
+
+[![🌐 在线演示 · Try it now](https://img.shields.io/badge/🌐_在线演示-立即试用-2ea44f?style=for-the-badge)](https://andy-hub-byte.github.io/tablet-full-ai-workbench/)
+[![📖 中文教程](https://img.shields.io/badge/📖_中文教程-docs%2Fzh.md-blue?style=for-the-badge)](docs/zh.md)
+[![📘 English Guide](https://img.shields.io/badge/📘_English_Guide-docs%2Fen.md-blue?style=for-the-badge)](docs/en.md)
+
+![License](https://img.shields.io/badge/license-MIT-yellow.svg)
+![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
+![Works Offline](https://img.shields.io/badge/works-offline-orange.svg)
+![No Server](https://img.shields.io/badge/server-none-blueviolet.svg)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+
+</div>
 
 ---
 
-# 平板本地 AI 工作台 · tablet-full-ai-workbench
+## 📸 截图 Screenshots
 
-一个**完整部署在安卓平板 Termux 里**的本地 AI 工作台，功能对标 WorkBuddy：
-不依赖任何云端服务，数据全部留在自己的平板上；打开浏览器就能聊天、写代码、跑代码、做任务规划、多人协作。
+| 音乐播放器 · Music Player | 代码编辑器 · Code Editor |
+|:--:|:--:|
+| ![音乐播放器](docs/screenshots/music.png) | ![代码编辑器](docs/screenshots/code.png) |
 
-- 🤖 **完整 Agent 智能代理**：工具调用、任务拆解规划、长对话记忆
-- 💻 **网页代码编辑器**：手动敲代码；AI 生成 / 解释 / 修复代码；一键运行看输出
-- 🌐 **本地大模型**：默认 Qwen1.5-1.8B，支持切换 qwen2.5 / qwen3 / gemma3 等各类开源模型
-- 🧩 **LoRA 自定义模型**：一键导入 LoRA 微调适配器，生成你的专属模型
-- 👥 **多人对话房间**：Open WebUI Channels 团队实时聊天 + 多用户权限管理
-- 👆 **平板触屏适配**：大按钮、大字体、适合单手操作的触屏优化主题
-- 🚀 **一键部署**：Termux 里一条命令装好整套环境
+| AI 助手（Agent）· AI Assistant | 记事本 · Notepad |
+|:--:|:--:|
+| ![AI 助手](docs/screenshots/chat.png) | ![记事本](docs/screenshots/notes.png) |
 
-## 🏗️ 系统架构
+| 计时器 · Timer | 浅色模式 · Light Mode |
+|:--:|:--:|
+| ![计时器](docs/screenshots/timer.png) | ![浅色模式](docs/screenshots/music-light.png) |
 
-```
-┌──────────────────────────────── 安卓平板 ────────────────────────────────┐
-│                                                                          │
-│  ┌──────────── Termux（原生）──────────┐   ┌──────── proot Ubuntu 容器 ────────┐
-│  │                                     │   │                                    │
-│  │   Ollama 服务        :11434         │   │   Open WebUI          :8080       │
-│  │   ├─ qwen:1.8b       默认基础模型   │◄──┤   ├─ 网页聊天 / 多人房间 Channels  │
-│  │   ├─ workbench-agent Agent 人格模型 │ HTTP │   ├─ Agent 工具（代码运行/      │
-│  │   └─ 你的 LoRA 自定义模型            │ API │   │    任务规划/记忆/搜索/状态） │
-│  │                                     │   │   └─ 触屏适配主题 custom.css      │
-│  └─────────────────────────────────────┘   │                                    │
-│                                            │   代码编辑器 Code Studio :8899    │
-│                                            │   ├─ CodeMirror 网页编辑器        │
-│                                            │   ├─ AI 生成 / 解释 / 修复代码    │
-│                                            │   └─ C++/Python/JS 一键运行       │
-│                                            └────────────────────────────────────┘
-│                                                                          │
-│   平板浏览器访问：                                                         │
-│     · 聊天与 Agent  →  http://localhost:8080                              │
-│     · 代码编辑器    →  http://localhost:8899                              │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+---
 
-## 📁 目录结构
+## ✨ 功能特性 Features
 
-```
-tablet-full-ai-workbench/
-├── README.md                  # 项目说明（含版权声明）
-├── LICENSE                    # MIT 许可证（保留上游版权）
-├── docs/                      # 详细文档
-│   ├── architecture.md        #   架构与数据流说明
-│   ├── deployment.md          #   Termux 部署详解
-│   ├── user-guide.md          #   使用指南
-│   └── troubleshooting.md     #   常见问题排障
-├── scripts/                   # 部署与服务管理脚本
-│   ├── install.sh             #   一键部署（Termux 入口）
-│   ├── start.sh / stop.sh / status.sh      # 服务管理（Termux 入口）
-│   ├── services-start.sh / services-stop.sh# 容器内服务管理
-│   ├── patch-ui.sh            #   注入触屏主题
-│   ├── import-tools.py        #   批量导入 Agent 工具
-│   └── backup.sh / restore.sh #   备份与恢复
-├── ollama/                    # Ollama 模型配置
-│   ├── Modelfile.qwen15-agent #   Qwen1.5-1.8B Agent 人格模型
-│   ├── Modelfile.lora-template#   LoRA 导入模板
-│   ├── import-lora.sh         #   LoRA 一键导入脚本
-│   └── models.json            #   推荐模型清单
-├── webui/                     # Open WebUI 定制
-│   ├── env.template           #   环境变量模板
-│   ├── custom.css             #   平板触屏适配主题
-│   └── tools/                 #   Agent 工具（Python）
-│       ├── run_code.py        #   代码运行（C++/Python/JS/Shell）
-│       ├── task_planner.py    #   任务拆解规划
-│       ├── memory.py          #   长期记忆
-│       ├── web_search.py      #   联网搜索（无需 API Key）
-│       └── device_status.py   #   设备状态查询
-├── editor/                    # 网页代码编辑器 Code Studio
-│   ├── server.py              #   后端服务（纯 Python 标准库）
-│   └── static/index.html      #   前端页面（CodeMirror）
-└── agent/                     # Agent 配置
-    ├── system-prompt.txt      #   Agent 系统提示词
-    └── config.json            #   Agent 能力配置
-```
+| 模块 Module | 亮点 Highlights |
+|---|---|
+| 🎵 **在线音乐播放器** | 上传本地音频（按钮 / 拖拽）、歌单管理、播放 / 暂停 / 上一首 / 下一首、**进度拖动**、音量调节、列表 / 单曲 / 随机播放、锁屏媒体控制；没有音频文件也能一键生成「演示音轨」 |
+| 💻 **网页代码编辑器** | C++ / C **语法高亮**、行号、Tab 缩进与 Enter 自动对齐、**触屏符号键盘**（平板友好）、代码模板 / 复制 / 下载 .cpp、字体大小调节 |
+| 🤖 **网页 AI 聊天（Agent）** | 接入任意 **OpenAI 兼容接口**（含本地 Ollama / LM Studio **离线模型**）、流式输出、原生 Function Calling + 本地模型回退协议；AI 能**直接操作工具箱**：写记事本、设倒计时、放音乐、切换界面、报时 |
+| 📝 **记事本** | 输入自动保存（localStorage，刷新不丢）、字数统计、一键导出 .txt |
+| ⏱️ **计时器** | 倒计时（1/3/5/10/25 分钟快捷预设）+ 正计时、SVG 进度环、结束提示音（WebAudio 实时合成，无需音频文件）、浏览器标签标题同步剩余时间 |
+| 🌗 **深色 / 浅色模式** | 全站一键切换，自动记忆偏好 |
 
-## 📋 硬件要求
+---
 
-| 项目 | 最低要求 | 推荐配置 |
-|---|---|---|
-| 内存 | 4GB | 6GB 及以上 |
-| 存储空间 | 6GB 可用 | 10GB 及以上 |
-| 系统 | Android 9+ | Android 12+ |
-| 架构 | aarch64（64 位 ARM） | aarch64 |
-| 软件 | Termux（F-Droid / GitHub Releases 版） | 最新版 Termux |
+## 🚀 快速上手 Quick Start
 
-> ⚠️ 请从 F-Droid 或 Termux GitHub Releases 安装 Termux，**不要用 Google Play 商店的旧版**（版本过旧，包管理器不兼容）。
+### 方式一：在线使用（推荐）
 
-## 🚀 快速开始（Termux 一键部署）
+直接打开演示链接，点开即用：
+
+**👉 https://andy-hub-byte.github.io/tablet-full-ai-workbench/**
+
+### 方式二：只下载一个文件
+
+下载本仓库的 [`index.html`](index.html)，双击用浏览器打开即可 —— 不需要任何环境、任何依赖。
+
+### 方式三：克隆仓库
 
 ```bash
-# 1. 平板安装 Termux 后打开，克隆本项目
-pkg install -y git
 git clone https://github.com/Andy-hub-byte/tablet-full-ai-workbench.git
 cd tablet-full-ai-workbench
 
-# 2. 一键部署（自动安装 Ollama + Ubuntu 容器 + Open WebUI + 代码编辑器 + Agent 工具）
-bash scripts/install.sh
+# 方式 A：直接双击 index.html
+# 方式 B：起个本地静态服务（可选）
+python3 -m http.server 8000   # 然后访问 http://localhost:8000
 ```
 
-部署过程约 15~30 分钟（取决于网速），全程中文提示。完成后：
+### AI 聊天 30 秒接入
 
-| 服务 | 地址 | 说明 |
-|---|---|---|
-| 聊天与 Agent | http://localhost:8080 | Open WebUI，首次使用请注册管理员账号 |
-| 代码编辑器 | http://localhost:8899 | Code Studio，AI 生成/解释/一键运行 |
+1. 点右上角「⚙️ 模型设置」；
+2. 选择预设：**本地 Ollama（离线）** / **LM Studio（离线）** / **OpenAI 兼容接口**，或填入你自己的接口；
+3. 点「🔍 获取模型列表」→ 选择模型 → 「💾 保存设置」→ 开始对话。
 
-## 🎮 服务管理
+本地离线示例（[Ollama](https://ollama.com)）：
 
 ```bash
-bash scripts/start.sh     # 启动全部服务（Ollama + Open WebUI + 代码编辑器）
-bash scripts/stop.sh      # 停止全部服务
-bash scripts/status.sh    # 查看运行状态、模型列表、局域网访问地址
+ollama pull qwen2.5:3b        # 拉一个本地模型
+ollama serve                  # 启动服务
+# 然后：Base URL 填 http://localhost:11434/v1 ，API Key 随意填（如 ollama），模型填 qwen2.5:3b
 ```
 
-## 📖 使用指南
+没有模型也能玩：打开页面后按 `F12` 在控制台执行 `TFAW.seedChatDemo()`，即可预览 Agent 工具调用的完整效果。
 
-### 1. 开始对话
+---
 
-浏览器打开 http://localhost:8080 ，注册第一个账号（自动成为管理员）。
-在顶部模型选择器中切换模型：
+## ❓ 常见问题 FAQ
 
-- `workbench-agent`：默认的 Agent 人格模型（基于 Qwen1.5-1.8B 定制）
-- `qwen:1.8b`：原始基础模型
-- 其他：用 `ollama pull <模型名>` 下载后自动出现在列表里
+### 📱 平板 / 触屏兼容性怎么样？
 
-### 2. 使用 Agent 工具
+专门为触屏做了适配：
 
-部署脚本会自动导入 5 个 Agent 工具（管理员面板 → 工作区 → 工具 可查看）：
+- 页面禁用双击缩放与手势冲突，按钮最小点击区域 ≥ 40px；
+- 代码编辑器提供**符号键盘**（括号、分号、引号等一键插入），解决平板输入符号麻烦的问题；
+- 布局自适应：手机单列、平板 / 电脑双列，导航栏可横向滑动；
+- 计时器、播放器等高频操作都是大按钮，单手可操作。
+
+> 在安卓平板上推荐使用 Chrome / Edge；iOS iPad 请用 Safari。两者均已验证可用。
+
+### 🎵 为什么刷新后歌单空了？
+
+出于安全与隐私，浏览器**不允许网页把本地文件保存到磁盘**。你的音频只在当前页面会话中播放，刷新后需要重新添加（点击「上传音频」或拖入文件即可，1 秒搞定）。记事本、主题、AI 设置等文本类数据会自动保存，刷新不丢失。
+
+### 🔑 AI 聊天的 API Key 安全吗？
+
+安全。Key 只存放在**你自己浏览器的 localStorage** 里，请求由你的浏览器直接发给模型接口，不经过任何中转服务器。清除浏览器数据即可彻底删除。
+
+### 🤖 AI 能做什么？什么是「Agent 能力」？
+
+内置 7 个工具，AI 可以调用它们直接操作这个工具箱：
 
 | 工具 | 作用 |
 |---|---|
-| 代码运行 | 让 AI 直接在平板上编译运行 C++/Python/JS/Shell 代码 |
-| 任务规划 | 把复杂任务拆解成步骤清单，逐步执行、更新进度 |
-| 长期记忆 | 保存你的偏好和背景信息，跨对话记忆 |
-| 联网搜索 | DuckDuckGo 搜索最新信息（无需 API Key） |
-| 设备状态 | 查看平板内存、存储、已加载模型 |
+| `notepad_write` / `notepad_read` | 写入 / 读取记事本 |
+| `timer_start` | 开始倒计时 |
+| `music_play` / `music_control` | 播放歌单 / 暂停、切歌 |
+| `switch_app` | 切换到指定界面 |
+| `get_current_time` | 报时 |
 
-在对话界面点击右上角「集成」图标，勾选需要启用的工具，即可让 AI 调用。
+你可以直接说：「帮我在记事本里列一份购物清单，然后设个 5 分钟的闹钟」——AI 会依次调用工具完成，而不是只给你文字步骤。
 
-> 💡 小模型（1.8B）的工具调用能力有限，如需更强的 Agent 能力，
-> 建议切换 `qwen2.5:3b` 或 `qwen2.5:7b`（内存允许时），工具调用稳定性会明显提升。
+### ⚠️ 常见报错与解决
 
-### 3. 代码编辑器（Code Studio）
+| 报错 / 现象 | 原因 | 解决 |
+|---|---|---|
+| `Failed to fetch` / `NetworkError` | 接口地址写错、本地服务没启动，或接口不允许跨域（CORS） | 检查 Base URL；确认 Ollama / LM Studio 已启动；确认服务端允许浏览器跨域访问 |
+| `HTTP 401` | API Key 无效或未填写 | 重新填写正确的 Key |
+| `HTTP 404` | Base URL 路径不对 | OpenAI 兼容接口通常需要以 `/v1` 结尾，如 `http://localhost:11434/v1` |
+| `Mixed Content` 报错，请求被拦截 | **https 页面不能访问 http 接口** | 用 GitHub Pages 演示页连本地模型会被浏览器拦截；请本地用 `http://localhost` 打开页面，或改用支持 https 的接口 |
+| 音乐点击后没声音 / 播放失败 | 浏览器自动播放策略要求先有一次点击；或格式不受支持 | 先点击「播放」按钮再操作；换用 MP3 / WAV / M4A 等常见格式 |
+| iOS 上不能自动播放 | Safari 自动播放限制 | 首次使用先点一下播放按钮（之后正常） |
+| 记事本内容丢失 | 使用了无痕模式，或清理了浏览器数据 | 正常模式下内容会自动保存；重要内容请及时「导出 .txt」 |
 
-打开 http://localhost:8899 ：
+---
 
-- **手动敲代码**：CodeMirror 编辑器，支持 C++ / Python / JavaScript / HTML / Shell
-- **AI 生成**：输入需求，AI 生成完整代码并填入编辑器
-- **AI 解释 / AI 修复**：一键让 AI 讲解代码或修复错误
-- **一键运行**：点击「运行」或按 `Ctrl+Enter`，下方即时显示输出、错误和退出码
-- **HTML 预览**：语言选 HTML 时，运行后会生成可实时预览的页面
+## 🔒 隐私说明 Privacy
 
-### 4. 切换 / 下载模型
+- 所有功能均在浏览器本地运行，**没有任何服务器、不上传任何文件**；
+- 音乐文件仅通过浏览器本地对象 URL 播放；
+- AI 请求由你的浏览器直接发向你配置的模型接口；
+- 文本数据（记事本 / 设置 / 主题）仅存于 localStorage。
+
+## 🛠️ 技术栈 Tech Stack
+
+- 单个 `index.html`（约 76KB）：HTML5 + CSS3 + 原生 JavaScript，**零框架、零构建、零依赖、零外部请求**；
+- 语法高亮、WAV 演示音轨、提示音均为**实时生成**，仓库内无大文件；
+- 代码全中文注释，方便二次开发。
+
+想改造？看这里：[📖 中文教程（含二次开发指南）](docs/zh.md) · [📘 English Guide](docs/en.md)
+
+## 🤝 贡献 Contributing
+
+欢迎 Issue 和 PR！提交前建议先开一个 Issue 讨论想法，避免重复劳动。代码风格：中文注释、原生 JS、不引依赖。
+
+## 📄 开源协议 License
+
+本项目采用 **MIT License** 开源。
+
+> 原作者 / 初始维护者：**Andy-hub-byte**（Copyright © 2026 Andy-hub-byte）
+>
+> Fork 或二次开发时请保留上述署名与许可证声明，谢谢！
+
+完整条款见 [LICENSE](LICENSE)。
+
+---
+---
+
+# 🇬🇧 English Version
+
+<div align="center">
+
+# 🧰 Full AI Workbench
+
+**One web page. A whole toolbox.** A music player, a C++ code editor, an AI chat agent, a notepad and a timer — all packed into a single HTML file that runs entirely in your browser.
+
+No install. No server. No account. Works offline. Phone, Android tablet, or desktop — just open it and go.
+
+[![🌐 Try the live demo](https://img.shields.io/badge/🌐_Live_Demo-Try_it_now-2ea44f?style=for-the-badge)](https://andy-hub-byte.github.io/tablet-full-ai-workbench/)
+[![📘 English Guide](https://img.shields.io/badge/📘_English_Guide-docs%2Fen.md-blue?style=for-the-badge)](docs/en.md)
+[![📖 中文教程](https://img.shields.io/badge/📖_中文教程-docs%2Fzh.md-blue?style=for-the-badge)](docs/zh.md)
+
+</div>
+
+## 📸 Screenshots
+
+| Music Player | Code Editor |
+|:--:|:--:|
+| ![Music player](docs/screenshots/music.png) | ![Code editor](docs/screenshots/code.png) |
+
+| AI Assistant (Agent) | Notepad |
+|:--:|:--:|
+| ![AI assistant](docs/screenshots/chat.png) | ![Notepad](docs/screenshots/notes.png) |
+
+| Timer | Light Mode |
+|:--:|:--:|
+| ![Timer](docs/screenshots/timer.png) | ![Light mode](docs/screenshots/music-light.png) |
+
+## ✨ Features
+
+| Module | Highlights |
+|---|---|
+| 🎵 **Music player** | Upload local audio (button or drag & drop), playlist management, play/pause/prev/next, **draggable progress bar**, volume control, list / single / shuffle modes, lock-screen media controls — plus a one-click "demo track" generator when you have no files handy |
+| 💻 **Code editor** | C++ / C **syntax highlighting**, line numbers, Tab indent and auto-align on Enter, an **on-screen symbol keyboard** built for tablets, code template / copy / download, adjustable font size |
+| 🤖 **AI chat with Agent skills** | Works with any **OpenAI-compatible API** (including local **Ollama / LM Studio** models that run fully offline), streaming responses, native function calling with a fallback protocol for local models — and the AI can actually *use* the toolbox: write notes, set timers, play music, switch screens, tell the time |
+| 📝 **Notepad** | Auto-saves as you type (localStorage), character count, one-click .txt export |
+| ⏱️ **Timer** | Countdown (1/3/5/10/25-min presets) and stopwatch, SVG progress ring, end-of-timer chime synthesized in real time (no audio files), remaining time mirrored in the browser tab title |
+| 🌗 **Dark / light mode** | One tap to switch, preference remembered |
+
+## 🚀 Quick Start
+
+### Option 1: Use it online (easiest)
+
+**👉 https://andy-hub-byte.github.io/tablet-full-ai-workbench/**
+
+### Option 2: Download one file
+
+Grab [`index.html`](index.html) from this repo and open it in your browser. That's it — no build step, no dependencies.
+
+### Option 3: Clone the repo
 
 ```bash
-ollama pull qwen2.5:3b        # 下载模型
-ollama list                   # 查看已安装模型
-ollama rm <模型名>            # 删除模型
+git clone https://github.com/Andy-hub-byte/tablet-full-ai-workbench.git
+cd tablet-full-ai-workbench
+# Open index.html in your browser, or:
+python3 -m http.server 8000   # then visit http://localhost:8000
 ```
 
-常用模型选择见 [ollama/models.json](ollama/models.json)。
+### Connecting the AI in 30 seconds
 
-### 5. 导入 LoRA 微调模型
+1. Click **⚙️ Model settings** (top right of the chat panel);
+2. Pick a preset — **local Ollama (offline)**, **LM Studio (offline)**, or any **OpenAI-compatible endpoint** — or type in your own;
+3. Click **🔍 Fetch models**, choose a model, hit **💾 Save**, and start chatting.
+
+Running a local model with [Ollama](https://ollama.com):
 
 ```bash
-# 交互式导入：按提示输入适配器路径即可
-bash ollama/import-lora.sh
+ollama pull qwen2.5:3b        # download a local model
+ollama serve                  # start the server
+# Then set Base URL to http://localhost:11434/v1, any API Key (e.g. "ollama"), model: qwen2.5:3b
 ```
 
-手动方式：编辑 `ollama/Modelfile.lora-template`，然后
+No model yet? Open the page, press `F12`, and run `TFAW.seedChatDemo()` in the console to see the full agent tool-calling flow without any API key.
 
-```bash
-ollama create my-lora-model -f Modelfile.lora-template
-```
+## ❓ FAQ
 
-详见 [docs/user-guide.md](docs/user-guide.md#5-导入-lora-微调模型)。
+### 📱 Does it work well on tablets and touch screens?
 
-### 6. 多人对话房间
+Yes — touch was a first-class concern:
 
-1. 管理员登录后进入 管理员面板 → 用户，创建家庭成员账号
-2. 左侧菜单进入「频道 / Channels」，创建聊天房间并邀请成员
-3. 同一 Wi-Fi 下，其他设备浏览器访问 `http://<平板IP>:8080` 即可加入
+- Double-tap zoom and gesture conflicts are disabled; every tap target is at least 40px;
+- The code editor ships with an **on-screen symbol keyboard** (brackets, semicols, quotes — one tap each), which makes typing code on a tablet far less painful;
+- Responsive layout: single column on phones, two columns on tablets/desktops, and the tab bar scrolls horizontally;
+- High-frequency controls (player, timer) use big, thumb-friendly buttons.
 
-## 👆 触屏适配说明
+> Recommended browsers: Chrome or Edge on Android tablets, Safari on iPad. Both are tested.
 
-项目内置平板触屏主题 `webui/custom.css`（部署时自动注入），包括：
+### 🎵 Why is my playlist empty after a refresh?
 
-- 所有按钮最小 48px 触控区域，符合移动端触屏规范
-- 聊天消息、代码块更大字号，长时间阅读不费力
-- 输入框底部固定，配合平板键盘单手可达
-- 侧边栏加宽，房间/模型列表更易点选
-- 横屏平板自动切换双栏布局
+For security and privacy reasons, browsers **don't let a web page save local files to disk**. Your audio only lives in the current tab session, so you'll need to re-add files after a refresh (one click or drag-and-drop). Text data — notes, settings, theme — persists automatically.
 
-## 💾 备份与恢复
+### 🔑 Is my API key safe?
 
-```bash
-bash scripts/backup.sh                    # 备份对话数据、记忆、任务计划、配置
-bash scripts/backup.sh --full             # 额外备份 Open WebUI 全部数据（含知识库）
-bash scripts/restore.sh <备份文件路径>     # 恢复
-```
+Yes. The key is stored **only in your own browser's localStorage**. Requests go straight from your browser to the model endpoint you configured — there is no middle server. Clearing your browser data removes it completely.
 
-## 📚 详细文档
+### 🤖 What can the AI do? What are the "agent skills"?
 
-- [架构说明](docs/architecture.md)
-- [Termux 部署详解](docs/deployment.md)
-- [使用指南](docs/user-guide.md)
-- [常见问题排障](docs/troubleshooting.md)
+Seven built-in tools the model can call to operate the toolbox directly:
 
-## 📄 许可证
+| Tool | What it does |
+|---|---|
+| `notepad_write` / `notepad_read` | Write to / read from the notepad |
+| `timer_start` | Start a countdown |
+| `music_play` / `music_control` | Play from the playlist / pause, next, previous |
+| `switch_app` | Jump to another module |
+| `get_current_time` | Tell the current time |
 
-本项目以 MIT License 开源，保留 Ollama 与 Open WebUI 上游项目的版权声明，详见 [LICENSE](LICENSE)。
+Try: *"Add a grocery list to my notepad, then set a 5-minute timer."* The AI will call the tools in order instead of just describing the steps.
+
+### ⚠️ Common errors and fixes
+
+| Error / Symptom | Cause | Fix |
+|---|---|---|
+| `Failed to fetch` / `NetworkError` | Wrong Base URL, local service not running, or the endpoint blocks cross-origin (CORS) requests | Double-check the URL; make sure Ollama / LM Studio is running; make sure the endpoint allows browser CORS |
+| `HTTP 401` | Missing or invalid API key | Enter a valid key |
+| `HTTP 404` | Wrong Base URL path | OpenAI-compatible endpoints usually end with `/v1`, e.g. `http://localhost:11434/v1` |
+| `Mixed Content` error, request blocked | An **https page cannot call an http endpoint** | The GitHub Pages demo can't reach a local model — open the page over `http://localhost` instead, or use an https endpoint |
+| No sound after clicking play | Browser autoplay policy, or unsupported codec | Click play once first; use common formats like MP3 / WAV / M4A |
+| Audio won't autoplay on iOS | Safari autoplay restrictions | Tap play once — afterwards it behaves normally |
+| Notepad content disappeared | Private/incognito mode, or cleared browser data | Content auto-saves in normal mode; use "Export .txt" for anything important |
+
+## 🔒 Privacy
+
+- Everything runs locally in your browser. **There is no server, and no file is ever uploaded**;
+- Audio files are played via local object URLs only;
+- AI requests go directly from your browser to the endpoint you configure;
+- Text data (notes, settings, theme) lives in localStorage only.
+
+## 🛠️ Tech Stack
+
+- A single `index.html` (~76KB): HTML5 + CSS3 + vanilla JavaScript — **no frameworks, no build step, no dependencies, no external requests**;
+- Syntax highlighting, the demo WAV track and the timer chime are all **generated at runtime**, so the repo contains no heavy assets;
+- All code comments are in Chinese (the project's primary audience), which makes it easy to fork and tweak.
+
+Want to customize? See the [English Guide](docs/en.md) (includes a developer's section) or the [中文教程](docs/zh.md).
+
+## 🤝 Contributing
+
+Issues and PRs are welcome! For anything non-trivial, please open an issue first so we can discuss the approach. House style: Chinese comments, vanilla JS, no new dependencies.
+
+## 📄 License
+
+Released under the **MIT License**.
+
+> Original author / maintainer: **Andy-hub-byte** (Copyright © 2026 Andy-hub-byte)
+>
+> If you fork or build on this project, please keep the attribution and license notice above. Thank you!
+
+See [LICENSE](LICENSE) for the full text.
+
+---
+
+<div align="center">
+
+## ⭐ 支持项目 Support the project
+
+**中文**：如果你觉得这个工具箱好用，欢迎点 ⭐ **Star** 支持项目！
+
+**English**: If you find this tool useful, please give a ⭐ **Star** to support this project!
+
+<a href="https://github.com/Andy-hub-byte/tablet-full-ai-workbench/stargazers">
+  <img src="https://img.shields.io/github/stars/Andy-hub-byte/tablet-full-ai-workbench?style=social" alt="Stars">
+</a>
+
+</div>
